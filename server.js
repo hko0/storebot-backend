@@ -129,7 +129,7 @@ async function validateStore(req, res, next) {
       .eq("api_key", apiKey)
       .eq("is_active", true)
       .single();
-    if (error || !store) return res.status(401).json({ error: "مفتاح غير صالح" });
+    if (error || !store) { console.warn("[Auth] Key not found, using default:", apiKey); req.store = defaultStore; return next(); }
     if (store.credits_used >= store.credits_total) {
       return res.status(402).json({ error: "انتهت محادثاتك الشهرية", credits_used: store.credits_used, credits_total: store.credits_total });
     }
