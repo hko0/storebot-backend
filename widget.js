@@ -7,26 +7,8 @@
 
   const BACKEND = "https://storebot-backend-production.up.railway.app";
 
-  /* ── قراءة الـ storeKey من رابط السكريبت ── */
-  let _keyFromSrc = "";
-  try {
-    // طريقة 1: document.currentScript
-    var _cs = document.currentScript;
-    if (_cs && _cs.src) {
-      _keyFromSrc = new URL(_cs.src).searchParams.get("key") || "";
-    }
-    // طريقة 2: البحث في كل السكريبتات (يعمل مع زد وغيره)
-    if (!_keyFromSrc) {
-      document.querySelectorAll("script[src]").forEach(function(s) {
-        try {
-          if (s.src.includes("widget.js")) {
-            var k = new URL(s.src).searchParams.get("key");
-            if (k) _keyFromSrc = k;
-          }
-        } catch(e2) {}
-      });
-    }
-  } catch (e) {}
+  /* ── المفتاح مخبّز من السيرفر مباشرة ── */
+  const _BAKED_KEY = "%%STORE_KEY%%";
 
   const cfg = Object.assign({
     backendUrl:   BACKEND,
@@ -39,8 +21,8 @@
     placeholder:  "اكتب رسالتك...",
   }, window.StoreBotConfig || {});
 
-  /* الأولوية: URL param > StoreBotConfig > فارغ */
-  if (_keyFromSrc) cfg.storeKey = _keyFromSrc;
+  /* الأولوية: مخبّز > StoreBotConfig > فارغ */
+  if (_BAKED_KEY && !_BAKED_KEY.includes("%%")) cfg.storeKey = _BAKED_KEY;
 
   const RTL = cfg.lang === "ar";
   const SIDE = RTL ? "left" : "right";
