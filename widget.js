@@ -5,8 +5,10 @@
 (function () {
   "use strict";
 
+  const BACKEND = "https://storebot-backend-production.up.railway.app";
+
   const cfg = Object.assign({
-    backendUrl:   "",
+    backendUrl:   BACKEND,
     storeName:    "متجرنا",
     lang:         "ar",
     primaryColor: "#111827",
@@ -196,7 +198,7 @@
     .sb-m.user { align-items: flex-end; }
 
     .sb-b {
-      max-width: 82%; padding: 12px 16px;
+      max-width: 82%; padding: 10px 14px;
       font-size: 14px; line-height: 1.7;
       word-break: break-word; white-space: pre-wrap;
       border-radius: 16px;
@@ -204,6 +206,7 @@
     .sb-m.bot  .sb-b {
       background: var(--bg3);
       color: var(--tx);
+      padding: 12px 16px;
       border-bottom-${RTL ? "right" : "left"}-radius: 4px;
     }
     .sb-m.user .sb-b {
@@ -249,14 +252,14 @@
 
     /* ── Input ── */
     #_sb_form {
-      padding: 12px 16px 16px;
+      padding: 10px 14px 14px;
       border-top: 1px solid var(--bd);
       display: flex; align-items: flex-end; gap: 10px;
       flex-shrink: 0;
     }
     #_sb_inp {
-      flex: 1; border: 1.5px solid var(--bd); border-radius: 14px;
-      padding: 10px 14px; font-size: 14px;
+      flex: 1; border: 1.5px solid var(--bd); border-radius: 24px;
+      padding: 9px 16px; font-size: 14px; min-height: 40px;
       resize: none; outline: none; background: var(--bg2);
       color: var(--tx); max-height: 96px; overflow-y: auto;
       transition: border-color .15s, box-shadow .15s;
