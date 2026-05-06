@@ -467,9 +467,11 @@
   /* ── API ── */
   async function callAPI(text) {
     messages.push({ role: "user", content: text });
+    const headers = { "Content-Type": "application/json" };
+    if (cfg.storeKey) headers["x-store-key"] = cfg.storeKey;
     const res = await fetch(`${cfg.backendUrl}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ messages: messages.slice(-12), storeName: cfg.storeName }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
