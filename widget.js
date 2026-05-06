@@ -7,12 +7,24 @@
 
   const BACKEND = "https://storebot-backend-production.up.railway.app";
 
-  /* ── قراءة الـ storeKey من رابط السكريبت (الأضمن) ── */
+  /* ── قراءة الـ storeKey من رابط السكريبت ── */
   let _keyFromSrc = "";
   try {
-    const _cs = document.currentScript;
+    // طريقة 1: document.currentScript
+    var _cs = document.currentScript;
     if (_cs && _cs.src) {
       _keyFromSrc = new URL(_cs.src).searchParams.get("key") || "";
+    }
+    // طريقة 2: البحث في كل السكريبتات (يعمل مع زد وغيره)
+    if (!_keyFromSrc) {
+      document.querySelectorAll("script[src]").forEach(function(s) {
+        try {
+          if (s.src.includes("widget.js")) {
+            var k = new URL(s.src).searchParams.get("key");
+            if (k) _keyFromSrc = k;
+          }
+        } catch(e2) {}
+      });
     }
   } catch (e) {}
 
