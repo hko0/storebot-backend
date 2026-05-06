@@ -482,10 +482,38 @@
       headers,
       body: JSON.stringify({ messages: messages.slice(-12), storeName: cfg.storeName }),
     });
+    if (res.status === 402) {
+      const data = await res.json().catch(() => ({}));
+      const err = new Error("credits");
+      err.type = "credits";
+      err.whatsapp = data.whatsapp || cfg.whatsapp || "";
+      throw err;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     messages.push({ role: "assistant", content: data.reply });
     return data.reply;
+  }
+
+  function showWhatsAppFallback(whatsapp) {
+    root.querySelector("#_sb_ty")?.remove();
+    // إخفاء صندوق الكتابة
+    const form = root.querySelector("#_sb_form");
+    if (form) form.style.display = "none";
+    // رسالة
+    const w = document.createElement("div");
+    w.className = "sb-m bot";
+    w.innerHTML = `
+      <div class="sb-b" style="background:var(--bg3);color:var(--tx)">
+        ${RTL ? "انتهت المحادثات المتاحة هذا الشهر 😔<br>تواصل معنا مباشرة على واتساب!" : "Monthly chat limit reached 😔<br>Contact us directly on WhatsApp!"}
+        ${whatsapp ? `<br><br><a href="https://wa.me/${whatsapp.replace(/\D/g,"")}" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;padding:10px 18px;border-radius:12px;text-decoration:none;font-weight:600;margin-top:6px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.857L.054 23.394a.75.75 0 0 0 .918.918l5.538-1.478A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.89 0-3.663-.497-5.197-1.367l-.374-.214-3.876 1.035 1.035-3.876-.214-.374A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+          ${RTL ? "تواصل على واتساب" : "WhatsApp Us"}
+        </a>` : ""}
+      </div>`;
+    msgs.appendChild(w);
+    msgs.scrollTop = msgs.scrollHeight;
   }
 
   async function sendMsg(text) {
@@ -500,8 +528,12 @@
       root.querySelector("#_sb_ty")?.remove();
       addMsg("bot", reply);
     } catch (e) {
-      root.querySelector("#_sb_ty")?.remove();
-      addMsg("bot", RTL ? `⚠️ خطأ: ${e.message}` : `⚠️ Error: ${e.message}`);
+      if (e.type === "credits") {
+        showWhatsAppFallback(e.whatsapp);
+      } else {
+        root.querySelector("#_sb_ty")?.remove();
+        addMsg("bot", RTL ? `⚠️ خطأ: ${e.message}` : `⚠️ Error: ${e.message}`);
+      }
     } finally {
       isBusy = false; send.disabled = !inp.value.trim();
       inp.focus();

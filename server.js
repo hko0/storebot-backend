@@ -131,7 +131,7 @@ async function validateStore(req, res, next) {
       .single();
     if (error || !store) { console.error("[Auth] Supabase error:", JSON.stringify(error), "| store:", store, "| key:", apiKey); req.store = defaultStore; return next(); }
     if (store.credits_used >= store.credits_total) {
-      return res.status(402).json({ error: "انتهت محادثاتك الشهرية", credits_used: store.credits_used, credits_total: store.credits_total });
+      return res.status(402).json({ error: "انتهت محادثاتك الشهرية", whatsapp: store.whatsapp || "", credits_used: store.credits_used, credits_total: store.credits_total });
     }
     req.store = store;
     next();
@@ -316,6 +316,17 @@ app.get("/embed.js", (req, res) => {
 cron.schedule("0 * * * *", async () => {
   try { await redis.del("feed:default"); } catch {}
   console.log("[Cron] Default feed cache cleared");
+});
+
+/* ─── Cron: reset credits on the 1st of every month ── */
+cron.schedule("0 0 1 * *", async () => {
+  try {
+    const { error } = await supabase.from("stores").update({ credits_used: 0 }).neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) console.error("[Cron] Credits reset error:", error.message);
+    else console.log("[Cron] Monthly credits reset done ✅");
+  } catch (err) {
+    console.error("[Cron] Credits reset failed:", err.message);
+  }
 });
 
 /* ─── Start ── */
