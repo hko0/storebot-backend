@@ -77,7 +77,7 @@ async function parseFeed(xmlText) {
 }
 
 /* ─── Load Feed (Redis cache) ── */
-async function loadFeed(feedUrl, storeId) {
+async function loadFeed(feedUrl, storeId, store = {}) {
   const cacheKey = `feed:${storeId}`;
   try {
     const cached = await redis.get(cacheKey);
@@ -90,7 +90,8 @@ async function loadFeed(feedUrl, storeId) {
     const xml = await res.text();
     const products = await parseFeed(xml);
     try {
-      await redis.set(cacheKey, JSON.stringify(products), "EX", 3600); // 1 hour cache
+      const ttl = (store?.cache_ttl_minutes || 60) * 60;
+      await redis.set(cacheKey, JSON.stringify(products), { ex: ttl });
     } catch {}
     console.log(`[Feed] Loaded ${products.length} products for store ${storeId}`);
     return products;
@@ -182,14 +183,32 @@ function buildContext(products) {
 }
 
 /* ─── System Prompt ── */
-function buildSystemPrompt(ctx, storeName, total) {
-  return `أنت مساعد تسوق ذكي لمتجر "${storeName}". المتجر يحتوي على ${total.toLocaleString()} منتج.
-## تعليماتك:
-- أجب بنفس لغة العميل (عربي أو إنجليزي).
+function buildSystemPrompt(ctx, store, total) {
+  const storeName = store.name || "متجرنا";
+  const lang = store.lang || "ar";
+  const currency = store.currency || "ريال";
+
+  const extras = [
+    store.instructions ? `## تعليمات خاصة بالمتجر:\n${store.instructions}` : "",
+    store.working_hours ? `## ساعات العمل:\n${store.working_hours}` : "",
+    store.shipping_info ? `## معلومات الشحن:\n${store.shipping_info}` : "",
+    store.return_policy ? `## سياسة الإرجاع:\n${store.return_policy}` : "",
+    store.whatsapp ? `## واتساب الدعم: ${store.whatsapp}` : "",
+    store.support_email ? `## البريد الإلكتروني: ${store.support_email}` : "",
+  ].filter(Boolean).join("\n\n");
+
+  return `أنت مساعد تسوق ذكي لمتجر "${storeName}". المتجر يحتوي على ${total.toLocaleString()} منتج. العملة: ${currency}.
+
+## تعليماتك الأساسية:
+- أجب بنفس لغة العميل (${lang === "ar" ? "العربية افتراضياً" : "English by default"}).
 - كن ودوداً ومختصراً. اذكر الاسم والسعر والرابط.
-- لا تخترع منتجات أو أسعار غير موجودة.
+- لا تخترع منتجات أو أسعار غير موجودة في القائمة.
 - إذا أراد الشراء، وجّهه للرابط المباشر.
-## المنتجات (${ctx.split('\n').filter(l=>l.startsWith('[')).length} منتج ذو صلة):
+- إذا سأل عن الشحن أو الإرجاع أو الدعم، استخدم المعلومات أدناه.
+
+${extras}
+
+## المنتجات المتاحة (${ctx.split("\n").filter(l=>l.startsWith("[")).length} منتج ذو صلة من أصل ${total.toLocaleString()}):
 ${ctx}`;
 }
 
@@ -220,10 +239,10 @@ app.post("/api/chat", validateStore, async (req, res) => {
   if (userMsg.length > 500) return res.status(400).json({ error: "Message too long" });
 
   const feedUrl = store.feed_url || process.env.FEED_URL;
-  const products = await loadFeed(feedUrl, store.id);
+  const products = await loadFeed(feedUrl, store.id, store);
 
   const query = messages.slice(-3).map(m => m.content).join(" ").slice(0, 300);
-  const relevant = searchProducts(products, query, 15);
+  const relevant = searchProducts(products, query, store.max_products_search || 15);
   const ctx = buildContext(relevant);
   const sysPrompt = buildSystemPrompt(ctx, storeName || store.name, products.length);
 
