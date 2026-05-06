@@ -9,7 +9,7 @@ const fetch       = (...args) => import("node-fetch").then(({default: f}) => f(.
 const xml2js      = require("xml2js");
 const compression = require("compression");
 const { createClient } = require("@supabase/supabase-js");
-const Redis       = require("ioredis");
+const { Redis }   = require("@upstash/redis");
 const path        = require("path");
 
 const app  = express();
@@ -23,12 +23,10 @@ const supabase = createClient(
 );
 
 /* ─── Redis ── */
-const redis = new Redis(process.env.REDIS_URL || "", {
-  tls: process.env.REDIS_URL?.startsWith("rediss://") ? {} : undefined,
-  lazyConnect: true,
-  maxRetriesPerRequest: 2,
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || "",
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
 });
-redis.on("error", (e) => console.warn("[Redis] Error:", e.message));
 
 /* ─── Middleware ── */
 app.use(compression());
@@ -198,7 +196,7 @@ ${ctx}`;
 /* ─── Routes ── */
 app.get("/health", async (req, res) => {
   let redisOk = false;
-  try { await redis.ping(); redisOk = true; } catch {}
+  try { await redis.ping(); redisOk = true; } catch (e) { console.warn("[Redis]", e.message); }
   res.json({ status: "ok", redis: redisOk, supabase: !!process.env.SUPABASE_URL });
 });
 
@@ -285,6 +283,6 @@ cron.schedule("0 * * * *", async () => {
 /* ─── Start ── */
 app.listen(PORT, async () => {
   console.log(`\n🚀 StoreBot v3 running on port ${PORT}`);
-  try { await redis.connect(); console.log("✅ Redis connected"); } catch {}
+  try { await redis.ping(); console.log("✅ Redis connected"); } catch (e) { console.warn("Redis not connected:", e.message); }
   console.log("✅ Ready!\n");
 });
