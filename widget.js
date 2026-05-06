@@ -7,6 +7,15 @@
 
   const BACKEND = "https://storebot-backend-production.up.railway.app";
 
+  /* ── قراءة الـ storeKey من رابط السكريبت (الأضمن) ── */
+  let _keyFromSrc = "";
+  try {
+    const _cs = document.currentScript;
+    if (_cs && _cs.src) {
+      _keyFromSrc = new URL(_cs.src).searchParams.get("key") || "";
+    }
+  } catch (e) {}
+
   const cfg = Object.assign({
     backendUrl:   BACKEND,
     storeName:    "متجرنا",
@@ -17,6 +26,9 @@
     greeting:     "مرحباً! كيف أقدر أساعدك اليوم؟",
     placeholder:  "اكتب رسالتك...",
   }, window.StoreBotConfig || {});
+
+  /* الأولوية: URL param > StoreBotConfig > فارغ */
+  if (_keyFromSrc) cfg.storeKey = _keyFromSrc;
 
   const RTL = cfg.lang === "ar";
   const SIDE = RTL ? "left" : "right";
