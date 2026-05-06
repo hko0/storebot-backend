@@ -468,7 +468,9 @@
   async function callAPI(text) {
     messages.push({ role: "user", content: text });
     const headers = { "Content-Type": "application/json" };
-    if (cfg.storeKey) headers["x-store-key"] = cfg.storeKey;
+    // قراءة المفتاح وقت الإرسال لضمان تحميله
+    const storeKey = cfg.storeKey || window.StoreBotConfig?.storeKey || "";
+    if (storeKey) headers["x-store-key"] = storeKey;
     const res = await fetch(`${cfg.backendUrl}/api/chat`, {
       method: "POST",
       headers,
