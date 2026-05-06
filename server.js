@@ -268,6 +268,7 @@ app.post("/api/chat", validateStore, async (req, res) => {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
+      console.error("[Claude] Status:", response.status, JSON.stringify(err));
       return res.status(502).json({ error: err?.error?.message || "Claude error" });
     }
 
