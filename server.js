@@ -14,9 +14,50 @@ const cron       = require("node-cron");
 const fetch      = (...args) => import("node-fetch").then(({default: f}) => f(...args));
 const xml2js     = require("xml2js");
 const compression = require("compression");
+const { createClient } = require("@supabase/supabase-js");
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+
+/* ─── Supabase ───────────────────────────────────────────────── */
+const supabase = createClient(
+  process.env.SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_KEY || "",
+  { auth: { persistSession: false } }
+);
+
+/* ─── Store Validator ────────────────────────────────────────── */
+async function validateStore(req, res, next) {
+  const apiKey = req.headers["x-store-key"];
+  if (!apiKey) {
+    req.store = {
+      id: "default",
+      name: process.env.STORE_NAME || "متجرنا",
+      feed_url: process.env.FEED_URL,
+      credits_total: 999999,
+      credits_used: 0,
+    };
+    return next();
+  }
+  const { data: store, error } = await supabase
+    .from("stores")
+    .select("*")
+    .eq("api_key", apiKey)
+    .eq("is_active", true)
+    .single();
+
+  if (error || !store) return res.status(401).json({ error: "مفتاح غير صالح" });
+  if (store.credits_used >= store.credits_total) {
+    return res.status(402).json({ error: "انتهت محادثاتك", credits_used: store.credits_used, credits_total: store.credits_total });
+  }
+  req.store = store;
+  next();
+}
+
+async function incrementCredits(storeId) {
+  if (storeId === "default") return;
+  await supabase.from("stores").update({ credits_used: supabase.rpc("credits_used + 1") }).eq("id", storeId);
+}
 
 /* ─── Middleware ─────────────────────────────────────────────── */
 app.use(compression());
@@ -330,7 +371,7 @@ app.post("/api/chat", async (req, res) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model:      "claude-sonnet-4-5",
+        model:      "claude-sonnet-4-20250514",
         max_tokens: 1024,
         system:     systemPrompt,
         messages:   messages.slice(-12), // آخر 12 رسالة فقط
