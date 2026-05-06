@@ -365,6 +365,24 @@ app.get("/api/stats", (req, res) => {
   });
 });
 
+
+/* ─── Static Widget Files ────────────────────────────────────── */
+const path = require("path");
+
+app.get("/widget.js", (req, res) => {
+  res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cache-Control", "public, max-age=300");
+  res.sendFile(path.join(__dirname, "widget.js"));
+});
+
+app.get("/embed.js", (req, res) => {
+  res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cache-Control", "public, max-age=60");
+  res.sendFile(path.join(__dirname, "embed.js"));
+});
+
 /* ─── Start ──────────────────────────────────────────────────── */
 app.listen(PORT, async () => {
   console.log(`\n🚀 StoreBot Backend running on port ${PORT}`);
