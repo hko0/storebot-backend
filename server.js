@@ -35,7 +35,12 @@ app.use(cors({
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",").map(s => s.trim())
     : "*",
+  allowedHeaders: ["Content-Type", "x-store-key"],
+  methods: ["GET", "POST", "OPTIONS"],
 }));
+
+// Handle preflight
+app.options("*", cors());
 
 /* ─── XML Parser ── */
 function extractText(val) {
