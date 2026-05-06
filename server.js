@@ -142,7 +142,17 @@ async function validateStore(req, res, next) {
 async function incrementCredits(storeId) {
   if (storeId === "default") return;
   try {
-    await supabase.rpc("increment_credits", { store_id: storeId });
+    const { data, error } = await supabase
+      .from("stores")
+      .select("credits_used")
+      .eq("id", storeId)
+      .single();
+    if (error || !data) return;
+    await supabase
+      .from("stores")
+      .update({ credits_used: data.credits_used + 1 })
+      .eq("id", storeId);
+    console.log(`[Credits] ${storeId}: ${data.credits_used + 1}`);
   } catch (err) {
     console.error("[Credits] Error:", err.message);
   }
