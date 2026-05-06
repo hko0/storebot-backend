@@ -196,8 +196,8 @@
     .sb-m.user { align-items: flex-end; }
 
     .sb-b {
-      max-width: 80%; padding: 10px 14px;
-      font-size: 14px; line-height: 1.6;
+      max-width: 82%; padding: 12px 16px;
+      font-size: 14px; line-height: 1.7;
       word-break: break-word; white-space: pre-wrap;
       border-radius: 16px;
     }
@@ -210,7 +210,15 @@
       background: var(--p);
       color: #fff;
       border-bottom-${RTL ? "left" : "right"}-radius: 4px;
+      padding: 12px 18px;
     }
+    .sb-m.bot .sb-b a {
+      color: var(--a);
+      text-decoration: underline;
+      word-break: break-all;
+      cursor: pointer;
+    }
+    .sb-m.bot .sb-b a:hover { opacity: .8; }
     .sb-t { font-size: 10px; color: var(--tx2); margin-top: 4px; padding: 0 4px; }
 
     /* Typing dots */
@@ -360,13 +368,64 @@
   /* ── Helpers ── */
   const ts = () => new Date().toLocaleTimeString(RTL ? "ar" : "en", { hour: "2-digit", minute: "2-digit" });
 
+  /* حفظ UTM params من الصفحة الحالية */
+  function getUTMParams() {
+    const p = new URLSearchParams(window.location.search);
+    const utm = {};
+    ["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach(k => {
+      if (p.get(k)) utm[k] = p.get(k);
+    });
+    return utm;
+  }
+
+  /* إضافة UTM على الروابط */
+  function addUTMToUrl(url) {
+    try {
+      const u = new URL(url);
+      const utm = getUTMParams();
+      // نضيف utm_source=storebot دائماً
+      u.searchParams.set("utm_source", utm.utm_source || "storebot");
+      u.searchParams.set("utm_medium", utm.utm_medium || "chat");
+      if (utm.utm_campaign) u.searchParams.set("utm_campaign", utm.utm_campaign);
+      return u.toString();
+    } catch { return url; }
+  }
+
+  /* تحويل النص إلى HTML مع روابط قابلة للنقر */
+  function renderText(text) {
+    const escaped = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    // تحويل الروابط
+    const linked = escaped.replace(
+      /(https?:\/\/[^\s\)\]\*،,]+)/g,
+      (url) => {
+        const clean = url.replace(/&amp;/g, "&");
+        const tracked = addUTMToUrl(clean);
+        const display = clean.length > 40 ? clean.slice(0, 40) + "..." : clean;
+        return `<a href="${tracked}" target="_blank" rel="noopener">${display}</a>`;
+      }
+    );
+
+    // تحويل **bold**
+    return linked.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  }
+
   function addMsg(role, text) {
     root.querySelector("#_sb_welcome")?.remove();
     const w = document.createElement("div");
     w.className = `sb-m ${role}`;
     const b = document.createElement("div");
     b.className = "sb-b";
-    b.textContent = text;
+
+    if (role === "bot") {
+      b.innerHTML = renderText(text);
+    } else {
+      b.textContent = text;
+    }
+
     const t = document.createElement("div");
     t.className = "sb-t";
     t.textContent = ts();
