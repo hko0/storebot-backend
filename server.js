@@ -40,7 +40,7 @@ app.use(cors({
 }));
 
 // Handle preflight
-app.options("*", cors());
+app.options("/(.*)", cors());
 
 /* ─── XML Parser ── */
 function extractText(val) {
