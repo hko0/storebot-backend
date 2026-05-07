@@ -243,6 +243,7 @@ app.post("/api/refresh-feed", async (req, res) => {
 });
 
 app.post("/api/chat", validateStore, async (req, res) => {
+  const startTime = Date.now();
   const { messages, storeName } = req.body;
   const store = req.store;
 
@@ -277,6 +278,19 @@ app.post("/api/chat", validateStore, async (req, res) => {
     const reply = data.content?.[0]?.text || "";
 
     await incrementCredits(store.id);
+
+    // سجّل المحادثة
+    const responseTime = Date.now() - startTime;
+    supabase.from("usage_logs").insert({
+      store_id: store.id === "default" ? null : store.id,
+      session_id: req.headers["x-session-id"] || null,
+      user_message: userMsg,
+      bot_reply: reply,
+      tokens_used: data.usage?.input_tokens + data.usage?.output_tokens || 0,
+      products_found: relevant.length,
+      response_time_ms: responseTime,
+      model: "claude-sonnet-4-5",
+    }).then().catch(e => console.warn("[Log]", e.message));
 
     res.json({ reply, productsFound: relevant.length, totalProducts: products.length });
   } catch (err) {
@@ -321,22 +335,9 @@ cron.schedule("0 * * * *", async () => {
 /* ─── Cron: reset credits on the 1st of every month ── */
 cron.schedule("0 0 1 * *", async () => {
   try {
-    const { data: stores, error } = await supabase
-      .from("stores")
-      .select("id, name, renewals_left")
-      .gt("renewals_left", 0);
-
-    if (error) { console.error("[Cron] Fetch error:", error.message); return; }
-
-    for (const store of stores) {
-      await supabase
-        .from("stores")
-        .update({ credits_used: 0, renewals_left: store.renewals_left - 1 })
-        .eq("id", store.id);
-      console.log(`[Cron] Reset ${store.name} — renewals left: ${store.renewals_left - 1}`);
-    }
-
-    console.log(`[Cron] Monthly reset done ✅ (${stores.length} stores)`);
+    const { error } = await supabase.from("stores").update({ credits_used: 0 }).neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) console.error("[Cron] Credits reset error:", error.message);
+    else console.log("[Cron] Monthly credits reset done ✅");
   } catch (err) {
     console.error("[Cron] Credits reset failed:", err.message);
   }
