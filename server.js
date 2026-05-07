@@ -321,9 +321,22 @@ cron.schedule("0 * * * *", async () => {
 /* ─── Cron: reset credits on the 1st of every month ── */
 cron.schedule("0 0 1 * *", async () => {
   try {
-    const { error } = await supabase.from("stores").update({ credits_used: 0 }).neq("id", "00000000-0000-0000-0000-000000000000");
-    if (error) console.error("[Cron] Credits reset error:", error.message);
-    else console.log("[Cron] Monthly credits reset done ✅");
+    const { data: stores, error } = await supabase
+      .from("stores")
+      .select("id, name, renewals_left")
+      .gt("renewals_left", 0);
+
+    if (error) { console.error("[Cron] Fetch error:", error.message); return; }
+
+    for (const store of stores) {
+      await supabase
+        .from("stores")
+        .update({ credits_used: 0, renewals_left: store.renewals_left - 1 })
+        .eq("id", store.id);
+      console.log(`[Cron] Reset ${store.name} — renewals left: ${store.renewals_left - 1}`);
+    }
+
+    console.log(`[Cron] Monthly reset done ✅ (${stores.length} stores)`);
   } catch (err) {
     console.error("[Cron] Credits reset failed:", err.message);
   }
