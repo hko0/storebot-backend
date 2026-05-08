@@ -12,6 +12,9 @@ const compression = require("compression");
 const { createClient } = require("@supabase/supabase-js");
 const { Redis }   = require("@upstash/redis");
 const path        = require("path");
+const Stripe      = require("stripe");
+
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -31,7 +34,10 @@ const redis = new Redis({
 
 /* ─── Middleware ── */
 app.use(compression());
-app.use(express.json({ limit: "10kb" }));
+app.use((req, res, next) => {
+  if (req.path === "/api/webhook") return next();
+  express.json({ limit: "10kb" })(req, res, next);
+});
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",").map(s => s.trim())
@@ -159,7 +165,13 @@ async function validateStore(req, res, next) {
   }
 }
 
-/* ─── Plan Token Limits ── */
+/* ─── Stripe Plans ── */
+const STRIPE_PRICES = {
+  starter:  "price_1TUxNz1Xx7QtUnCaQpQBGx6s",
+  pro:      "price_1TUxPF1Xx7QtUnCaCf0EcNB1",
+  advanced: "price_1TUxQ81Xx7QtUnCawa1eNvmH",
+};
+const PRICE_TO_PLAN = Object.fromEntries(Object.entries(STRIPE_PRICES).map(([k,v]) => [v,k]));
 const PLAN_TOKENS = {
   trial:    45_000,
   starter:  2_250_000,
@@ -353,7 +365,73 @@ app.post("/api/chat", validateStore, async (req, res) => {
   }
 });
 
-app.get("/api/stats", async (req, res) => {
+/* ─── Stripe: Create Checkout Session ── */
+app.post("/api/create-checkout", async (req, res) => {
+  const { plan, storeId, successUrl, cancelUrl } = req.body;
+  if (!STRIPE_PRICES[plan]) return res.status(400).json({ error: "باقة غير صالحة" });
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "subscription",
+      line_items: [{ price: STRIPE_PRICES[plan], quantity: 1 }],
+      success_url: successUrl || "https://dafor.ai/dashboard.html?payment=success",
+      cancel_url:  cancelUrl  || "https://dafor.ai/dashboard.html?payment=cancelled",
+      metadata: { storeId, plan },
+      subscription_data: { metadata: { storeId, plan } },
+    });
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("[Stripe] Checkout error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ─── Stripe: Webhook ── */
+app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error("[Webhook] Signature error:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const { storeId, plan } = session.metadata || {};
+    if (storeId && plan) {
+      const tokens = PLAN_TOKENS[plan] || PLAN_TOKENS.trial;
+      await supabase.from("stores").update({
+        plan,
+        credits_total:   tokens,
+        credits_used:    0,
+        renewals_left:   1,
+        is_active:       true,
+        plan_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      }).eq("id", storeId);
+      console.log(`[Stripe] ✅ Activated ${plan} for store ${storeId}`);
+    }
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const sub = event.data.object;
+    const storeId = sub.metadata?.storeId;
+    if (storeId) {
+      await supabase.from("stores").update({
+        plan:            "trial",
+        credits_total:   PLAN_TOKENS.trial,
+        credits_used:    0,
+        renewals_left:   0,
+        plan_expires_at: null,
+      }).eq("id", storeId);
+      console.log(`[Stripe] ❌ Subscription cancelled for store ${storeId}`);
+    }
+  }
+
+  res.json({ received: true });
+});
   const feedUrl = process.env.FEED_URL;
   const products = await loadFeed(feedUrl, "default");
   const cats = [...new Set(products.map(p => p.category).filter(Boolean))].slice(0, 20);
