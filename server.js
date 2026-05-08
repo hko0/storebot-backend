@@ -277,20 +277,32 @@ app.post("/api/chat", validateStore, async (req, res) => {
     const data = await response.json();
     const reply = data.content?.[0]?.text || "";
 
+    // ── حساب التكلفة الفعلية ──
+    const inputTokens  = data.usage?.input_tokens  || 0;
+    const outputTokens = data.usage?.output_tokens || 0;
+    const costUsd = (inputTokens * 3 / 1_000_000) + (outputTokens * 15 / 1_000_000);
+    const costSar = costUsd * 3.75;
+
     await incrementCredits(store.id);
 
-    // سجّل المحادثة
+    // ── تسجيل المحادثة مع التكلفة ──
     const responseTime = Date.now() - startTime;
     supabase.from("usage_logs").insert({
-      store_id: store.id === "default" ? null : store.id,
-      session_id: req.headers["x-session-id"] || null,
-      user_message: userMsg,
-      bot_reply: reply,
-      tokens_used: data.usage?.input_tokens + data.usage?.output_tokens || 0,
-      products_found: relevant.length,
+      store_id:         store.id === "default" ? null : store.id,
+      session_id:       req.headers["x-session-id"] || null,
+      user_message:     userMsg,
+      bot_reply:        reply,
+      input_tokens:     inputTokens,
+      output_tokens:    outputTokens,
+      tokens_used:      inputTokens + outputTokens,
+      cost_usd:         costUsd,
+      cost_sar:         costSar,
+      products_found:   relevant.length,
       response_time_ms: responseTime,
-      model: "claude-sonnet-4-5",
+      model:            "claude-sonnet-4-5",
     }).then().catch(e => console.warn("[Log]", e.message));
+
+    console.log(`[Cost] ${store.id} — $${costUsd.toFixed(6)} / ${costSar.toFixed(4)} ريال`);
 
     res.json({ reply, productsFound: relevant.length, totalProducts: products.length });
   } catch (err) {
@@ -305,6 +317,32 @@ app.get("/api/stats", async (req, res) => {
   const cats = [...new Set(products.map(p => p.category).filter(Boolean))].slice(0, 20);
   const brands = [...new Set(products.map(p => p.brand).filter(Boolean))].slice(0, 20);
   res.json({ totalProducts: products.length, categories: cats, brands });
+});
+
+/* ─── Cost Stats per Store ── */
+app.get("/api/cost/:storeId", async (req, res) => {
+  if (req.headers["x-refresh-secret"] !== process.env.REFRESH_SECRET)
+    return res.status(401).json({ error: "Unauthorized" });
+  try {
+    const { data, error } = await supabase
+      .from("usage_logs")
+      .select("cost_usd, cost_sar, tokens_used, created_at")
+      .eq("store_id", req.params.storeId)
+      .order("created_at", { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    const totalUsd = data.reduce((s, r) => s + (r.cost_usd || 0), 0);
+    const totalSar = data.reduce((s, r) => s + (r.cost_sar || 0), 0);
+    const totalTokens = data.reduce((s, r) => s + (r.tokens_used || 0), 0);
+    res.json({
+      messages:     data.length,
+      totalTokens,
+      totalUsd:     totalUsd.toFixed(4),
+      totalSar:     totalSar.toFixed(2),
+      avgCostUsd:   data.length ? (totalUsd / data.length).toFixed(6) : "0",
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /* ─── Serve Widget Files ── */
