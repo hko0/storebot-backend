@@ -130,6 +130,23 @@ async function validateStore(req, res, next) {
       .eq("is_active", true)
       .single();
     if (error || !store) { console.error("[Auth] Supabase error:", JSON.stringify(error), "| store:", store, "| key:", apiKey); req.store = defaultStore; return next(); }
+
+    // تحقق من انتهاء الباقة
+    const now = new Date();
+    if (store.plan_expires_at && new Date(store.plan_expires_at) < now && store.plan !== "trial") {
+      await supabase.from("stores").update({
+        previous_plan:  store.plan,
+        plan:           "trial",
+        credits_total:  PLAN_TOKENS.trial,
+        credits_used:   0,
+        plan_expires_at: null,
+      }).eq("id", store.id);
+      store.plan = "trial";
+      store.credits_total = PLAN_TOKENS.trial;
+      store.credits_used  = 0;
+      console.log(`[Plan] ${store.id} downgraded to trial`);
+    }
+
     if (store.credits_used >= store.credits_total) {
       return res.status(402).json({ error: "انتهت محادثاتك الشهرية", whatsapp: store.whatsapp || "", credits_used: store.credits_used, credits_total: store.credits_total });
     }
@@ -142,21 +159,45 @@ async function validateStore(req, res, next) {
   }
 }
 
-/* ─── Increment Credits ── */
-async function incrementCredits(storeId) {
+/* ─── Plan Token Limits ── */
+const PLAN_TOKENS = {
+  trial:    45_000,
+  starter:  2_250_000,
+  pro:      9_000_000,
+  advanced: 45_000_000,
+};
+
+/* ─── Increment Credits (token-based) ── */
+async function incrementCredits(storeId, tokensUsed) {
   if (storeId === "default") return;
   try {
     const { data, error } = await supabase
       .from("stores")
-      .select("credits_used")
+      .select("credits_used, credits_total, plan, plan_expires_at")
       .eq("id", storeId)
       .single();
     if (error || !data) return;
-    await supabase
-      .from("stores")
-      .update({ credits_used: data.credits_used + 1 })
+
+    // تحقق إذا انتهت الباقة → انزل للتجريبي
+    const now = new Date();
+    if (data.plan_expires_at && new Date(data.plan_expires_at) < now && data.plan !== "trial") {
+      await supabase.from("stores").update({
+        previous_plan:  data.plan,
+        plan:           "trial",
+        credits_total:  PLAN_TOKENS.trial,
+        credits_used:   0,
+        plan_expires_at: null,
+      }).eq("id", storeId);
+      console.log(`[Plan] ${storeId} downgraded to trial`);
+      return;
+    }
+
+    const newUsed = (data.credits_used || 0) + tokensUsed;
+    await supabase.from("stores")
+      .update({ credits_used: newUsed })
       .eq("id", storeId);
-    console.log(`[Credits] ${storeId}: ${data.credits_used + 1}`);
+
+    console.log(`[Credits] ${storeId}: ${newUsed.toLocaleString()} / ${data.credits_total.toLocaleString()} tokens`);
   } catch (err) {
     console.error("[Credits] Error:", err.message);
   }
@@ -283,7 +324,7 @@ app.post("/api/chat", validateStore, async (req, res) => {
     const costUsd = (inputTokens * 3 / 1_000_000) + (outputTokens * 15 / 1_000_000);
     const costSar = costUsd * 3.75;
 
-    await incrementCredits(store.id);
+    await incrementCredits(store.id, inputTokens + outputTokens);
 
     // ── تسجيل المحادثة مع التكلفة ──
     const responseTime = Date.now() - startTime;
@@ -373,9 +414,25 @@ cron.schedule("0 * * * *", async () => {
 /* ─── Cron: reset credits on the 1st of every month ── */
 cron.schedule("0 0 1 * *", async () => {
   try {
-    const { error } = await supabase.from("stores").update({ credits_used: 0 }).neq("id", "00000000-0000-0000-0000-000000000000");
-    if (error) console.error("[Cron] Credits reset error:", error.message);
-    else console.log("[Cron] Monthly credits reset done ✅");
+    const { data: stores, error } = await supabase
+      .from("stores")
+      .select("id, name, plan, renewals_left")
+      .gt("renewals_left", 0);
+
+    if (error) { console.error("[Cron] Fetch error:", error.message); return; }
+
+    for (const store of stores) {
+      const newTokens = PLAN_TOKENS[store.plan] || PLAN_TOKENS.trial;
+      await supabase.from("stores").update({
+        credits_used:    0,
+        credits_total:   newTokens,
+        renewals_left:   store.renewals_left - 1,
+        plan_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      }).eq("id", store.id);
+      console.log(`[Cron] Reset ${store.name} (${store.plan}) — renewals left: ${store.renewals_left - 1}`);
+    }
+
+    console.log(`[Cron] Monthly reset done ✅ (${stores.length} stores)`);
   } catch (err) {
     console.error("[Cron] Credits reset failed:", err.message);
   }
