@@ -214,24 +214,22 @@
     .sb-m.user { align-items: flex-end; }
 
     .sb-b {
-      max-width: 78%; padding: 8px 12px 6px;
-      font-size: 14px; line-height: 1.6;
+      max-width: 78%; padding: 10px 14px 22px;
+      font-size: 14px; line-height: 1.65;
       word-break: break-word; white-space: pre-wrap;
-      position: relative;
+      position: relative; min-width: 80px;
     }
     .sb-m.bot .sb-b {
       background: var(--wa-bubble-in);
       color: var(--wa-tx);
-      border-radius: 0 10px 10px 10px;
+      border-radius: 0 12px 12px 12px;
       box-shadow: 0 1px 2px rgba(0,0,0,.1);
-      padding: 8px 12px 18px;
     }
     .sb-m.user .sb-b {
       background: var(--wa-bubble-out);
       color: var(--wa-tx);
-      border-radius: 10px 0 10px 10px;
+      border-radius: 12px 0 12px 12px;
       box-shadow: 0 1px 2px rgba(0,0,0,.1);
-      padding: 8px 12px 18px;
     }
     .sb-m.bot .sb-b a {
       color: var(--wa-green3); text-decoration: underline;
@@ -261,22 +259,20 @@
 
     /* Quick replies */
     #_sb_quick {
-      padding: 8px 10px 4px;
-      display: flex; gap: 6px; flex-wrap: wrap;
+      padding: 10px 12px 8px;
+      display: flex; gap: 8px; flex-wrap: wrap;
       flex-shrink: 0;
       background: var(--wa-bg);
     }
     .sb-q {
       background: var(--wa-white);
       border: 1.5px solid var(--wa-green);
-      border-radius: 20px; padding: 6px 14px;
-      font-size: 12px; color: var(--wa-green3);
+      border-radius: 20px; padding: 7px 16px;
+      font-size: 13px; color: var(--wa-green3);
       cursor: pointer; white-space: nowrap;
       transition: all .15s; font-family: inherit;
-      box-shadow: 0 1px 2px rgba(0,0,0,.07);
-      display: inline-flex; align-items: center;
-      max-width: 100%;
-      overflow: hidden; text-overflow: ellipsis;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+      display: inline-flex; align-items: center; gap: 4px;
     }
     .sb-q:hover { background: var(--wa-green); color: #fff; }
 
