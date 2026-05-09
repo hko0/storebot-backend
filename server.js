@@ -432,6 +432,8 @@ app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, 
 
   res.json({ received: true });
 });
+
+app.get("/api/stats", async (req, res) => {
   const feedUrl = process.env.FEED_URL;
   const products = await loadFeed(feedUrl, "default");
   const cats = [...new Set(products.map(p => p.category).filter(Boolean))].slice(0, 20);
