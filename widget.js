@@ -49,36 +49,42 @@
     #_sb_root { all: initial; }
     #_sb_root *, #_sb_root *::before, #_sb_root *::after {
       box-sizing: border-box; margin: 0; padding: 0;
-      font-family: ${RTL ? "'IBM Plex Sans Arabic'" : "'IBM Plex Sans'"}, sans-serif;
+      font-family: ${RTL ? "'IBM Plex Sans Arabic'" : "'IBM Plex Sans'"}, -apple-system, sans-serif;
     }
     #_sb_root {
-      --p: ${cfg.primaryColor};
-      --a: ${cfg.accentColor};
-      --bg: #ffffff;
-      --bg2: #f8f9fc;
-      --bg3: #f1f3f9;
-      --tx: #0f172a;
-      --tx2: #64748b;
-      --bd: #e2e8f0;
-      --r: 20px;
+      --wa-green:   #25D366;
+      --wa-green2:  #128C7E;
+      --wa-green3:  #075E54;
+      --wa-light:   #dcf8c6;
+      --wa-bg:      #efeae2;
+      --wa-white:   #ffffff;
+      --wa-gray:    #f0f0f0;
+      --wa-tx:      #111b21;
+      --wa-tx2:     #667781;
+      --wa-bd:      #d1d7db;
+      --wa-bubble-in:  #ffffff;
+      --wa-bubble-out: #d9fdd3;
       direction: ${RTL ? "rtl" : "ltr"};
     }
 
-    /* ── Launcher ── */
+    /* ── Launcher Button (WhatsApp style) ── */
     #_sb_btn {
       position: fixed;
-      bottom: 28px;
-      ${SIDE}: 28px;
-      width: 58px; height: 58px;
+      bottom: 24px;
+      ${SIDE}: 24px;
+      width: 60px; height: 60px;
       border-radius: 50%;
-      background: var(--p);
+      background: var(--wa-green);
       border: none; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 20px rgba(0,0,0,.22), 0 1px 4px rgba(0,0,0,.12);
+      box-shadow: 0 4px 20px rgba(37,211,102,.45), 0 2px 8px rgba(0,0,0,.2);
       z-index: 2147483640;
-      transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+      transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
     }
-    #_sb_btn:hover { transform: scale(1.08); }
+    #_sb_btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 28px rgba(37,211,102,.55), 0 2px 10px rgba(0,0,0,.2);
+    }
     #_sb_btn:active { transform: scale(.94); }
 
     #_sb_btn_ico, #_sb_btn_x {
@@ -90,220 +96,234 @@
     #_sb_root.open #_sb_btn_x   { opacity: 1; transform: rotate(0) scale(1); }
 
     #_sb_badge {
-      position: absolute; top: 1px; ${SIDE}: 1px;
-      min-width: 18px; height: 18px; border-radius: 9px;
+      position: absolute; top: 0; ${SIDE}: 0;
+      min-width: 20px; height: 20px; border-radius: 10px;
       background: #ef4444; color: #fff;
-      font-size: 10px; font-weight: 600;
+      font-size: 11px; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
-      padding: 0 4px;
-      border: 2px solid #fff;
+      padding: 0 5px;
+      border: 2.5px solid #fff;
       opacity: 0; transform: scale(0);
       transition: opacity .15s, transform .25s cubic-bezier(.34,1.56,.64,1);
     }
     #_sb_badge.show { opacity: 1; transform: scale(1); }
 
-    /* ── Window ── */
+    /* ── Chat Window ── */
     #_sb_win {
       position: fixed;
-      bottom: 100px;
-      ${SIDE}: 28px;
+      bottom: 96px;
+      ${SIDE}: 24px;
       width: min(400px, calc(100vw - 20px));
-      height: min(600px, calc(100vh - 120px));
-      background: var(--bg);
-      border-radius: var(--r);
-      box-shadow: 0 20px 60px rgba(0,0,0,.15), 0 4px 16px rgba(0,0,0,.08);
+      height: min(620px, calc(100vh - 120px));
+      background: var(--wa-white);
+      border-radius: 16px;
+      box-shadow: 0 12px 48px rgba(0,0,0,.18), 0 2px 12px rgba(0,0,0,.1);
       display: flex; flex-direction: column;
       overflow: hidden;
       z-index: 2147483639;
-      transform: translateY(20px) scale(.96);
+      transform: translateY(24px) scale(.95);
       opacity: 0; pointer-events: none;
-      transition: transform .28s cubic-bezier(.34,1.56,.64,1), opacity .2s;
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .22s;
     }
     #_sb_root.open #_sb_win {
       transform: translateY(0) scale(1);
       opacity: 1; pointer-events: all;
     }
 
-    /* ── Header ── */
+    /* ── Header (WhatsApp style) ── */
     #_sb_hd {
-      background: var(--p);
-      padding: 18px 20px 16px;
+      background: var(--wa-green2);
+      padding: 10px 16px;
       display: flex; align-items: center; gap: 12px;
       flex-shrink: 0;
-      position: relative;
     }
     #_sb_av {
-      width: 44px; height: 44px; border-radius: 50%;
-      background: rgba(255,255,255,.15);
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(255,255,255,.2);
       display: flex; align-items: center; justify-content: center;
-      font-size: 22px; flex-shrink: 0;
-      border: 2px solid rgba(255,255,255,.2);
+      font-size: 20px; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,.3);
+      overflow: hidden;
     }
     #_sb_hd_info { flex: 1; min-width: 0; }
     #_sb_hd_name {
-      font-size: 15px; font-weight: 600; color: #fff;
+      font-size: 16px; font-weight: 600; color: #fff;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     #_sb_hd_sub {
-      font-size: 11px; color: rgba(255,255,255,.6);
-      display: flex; align-items: center; gap: 5px; margin-top: 3px;
+      font-size: 12px; color: rgba(255,255,255,.8);
+      display: flex; align-items: center; gap: 5px; margin-top: 2px;
     }
     #_sb_online {
       width: 7px; height: 7px; border-radius: 50%;
-      background: #4ade80;
+      background: #a7f3d0;
       animation: _sb_pulse 2s ease-in-out infinite;
     }
-    @keyframes _sb_pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    @keyframes _sb_pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
     #_sb_hd_x {
       background: rgba(255,255,255,.1); border: none; cursor: pointer;
-      color: rgba(255,255,255,.75); border-radius: 10px;
-      width: 32px; height: 32px;
+      color: rgba(255,255,255,.9); border-radius: 50%;
+      width: 36px; height: 36px;
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; font-size: 18px; line-height: 1;
+      flex-shrink: 0; font-size: 20px; line-height: 1;
       transition: background .15s;
     }
-    #_sb_hd_x:hover { background: rgba(255,255,255,.2); color: #fff; }
+    #_sb_hd_x:hover { background: rgba(255,255,255,.2); }
 
-    /* Product count pill */
-    #_sb_pill {
-      position: absolute; bottom: -12px; ${RTL ? "right" : "left"}: 20px;
-      background: var(--bg);
-      border: 1px solid var(--bd);
-      border-radius: 20px;
-      padding: 3px 10px;
-      font-size: 11px; color: var(--tx2);
-      box-shadow: 0 2px 8px rgba(0,0,0,.07);
-      white-space: nowrap;
-    }
-
-    /* ── Messages ── */
+    /* ── Messages Area (WhatsApp wallpaper) ── */
     #_sb_msgs {
       flex: 1; overflow-y: auto;
-      padding: 24px 16px 12px;
-      display: flex; flex-direction: column; gap: 10px;
+      padding: 12px 12px 8px;
+      display: flex; flex-direction: column; gap: 4px;
       scroll-behavior: smooth;
+      background-color: var(--wa-bg);
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4cdc5' fill-opacity='0.35'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
     }
-    #_sb_msgs::-webkit-scrollbar { width: 3px; }
-    #_sb_msgs::-webkit-scrollbar-thumb { background: var(--bd); border-radius: 2px; }
+    #_sb_msgs::-webkit-scrollbar { width: 4px; }
+    #_sb_msgs::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 2px; }
 
-    /* Welcome state */
+    /* Date separator */
+    .sb-date {
+      text-align: center; margin: 8px 0;
+    }
+    .sb-date span {
+      background: rgba(255,255,255,.85);
+      border-radius: 8px; padding: 4px 12px;
+      font-size: 11px; color: var(--wa-tx2);
+      box-shadow: 0 1px 2px rgba(0,0,0,.08);
+    }
+
+    /* Welcome */
     #_sb_welcome {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center; padding: 32px 24px; gap: 10px;
+      background: rgba(255,255,255,.9);
+      border-radius: 12px; padding: 20px;
+      text-align: center; margin: 8px 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
     }
-    #_sb_welcome .wi { font-size: 48px; }
-    #_sb_welcome .wt { font-size: 16px; font-weight: 600; color: var(--tx); }
-    #_sb_welcome .ws { font-size: 13px; color: var(--tx2); line-height: 1.6; max-width: 240px; }
+    #_sb_welcome .wi { font-size: 40px; margin-bottom: 8px; }
+    #_sb_welcome .wt { font-size: 15px; font-weight: 600; color: var(--wa-tx); margin-bottom: 6px; }
+    #_sb_welcome .ws { font-size: 13px; color: var(--wa-tx2); line-height: 1.6; }
 
-    /* Messages */
-    .sb-m { display: flex; flex-direction: column; animation: _sb_in .2s ease both; }
-    @keyframes _sb_in { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+    /* Message bubbles */
+    .sb-m { display: flex; flex-direction: column; animation: _sb_in .18s ease both; margin: 1px 0; }
+    @keyframes _sb_in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
     .sb-m.bot  { align-items: flex-start; }
     .sb-m.user { align-items: flex-end; }
 
     .sb-b {
-      max-width: 82%; padding: 10px 14px;
-      font-size: 14px; line-height: 1.7;
+      max-width: 78%; padding: 8px 12px 6px;
+      font-size: 14px; line-height: 1.6;
       word-break: break-word; white-space: pre-wrap;
-      border-radius: 16px;
+      position: relative;
     }
-    .sb-m.bot  .sb-b {
-      background: var(--bg3);
-      color: var(--tx);
-      padding: 12px 16px;
-      border-bottom-${RTL ? "right" : "left"}-radius: 4px;
+    .sb-m.bot .sb-b {
+      background: var(--wa-bubble-in);
+      color: var(--wa-tx);
+      border-radius: 0 10px 10px 10px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.1);
+      padding: 8px 12px 18px;
     }
     .sb-m.user .sb-b {
-      background: var(--p);
-      color: #fff;
-      border-bottom-${RTL ? "left" : "right"}-radius: 4px;
-      padding: 12px 18px;
+      background: var(--wa-bubble-out);
+      color: var(--wa-tx);
+      border-radius: 10px 0 10px 10px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.1);
+      padding: 8px 12px 18px;
     }
     .sb-m.bot .sb-b a {
-      color: var(--a);
-      text-decoration: underline;
-      word-break: break-all;
-      cursor: pointer;
+      color: var(--wa-green3); text-decoration: underline;
+      word-break: break-all; cursor: pointer;
     }
     .sb-m.bot .sb-b a:hover { opacity: .8; }
-    .sb-t { font-size: 10px; color: var(--tx2); margin-top: 4px; padding: 0 4px; }
 
-    /* Typing dots */
-    .sb-dots { display: flex; gap: 4px; padding: 12px 16px; }
-    .sb-dots span {
-      width: 7px; height: 7px; border-radius: 50%; background: var(--tx2);
-      animation: _sb_dot 1s ease-in-out infinite;
+    /* Tick + time inside bubble */
+    .sb-t {
+      position: absolute; bottom: 4px;
+      ${RTL ? "left" : "right"}: 8px;
+      font-size: 10px; color: var(--wa-tx2);
+      display: flex; align-items: center; gap: 2px;
     }
-    .sb-dots span:nth-child(2) { animation-delay: .15s; }
-    .sb-dots span:nth-child(3) { animation-delay: .3s; }
-    @keyframes _sb_dot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+    .sb-m.user .sb-t .sb-tick { color: #53bdeb; }
 
-    /* ── Quick replies ── */
+    /* Typing */
+    .sb-dots { display: flex; gap: 4px; padding: 8px 14px 18px; }
+    .sb-dots span {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--wa-tx2);
+      animation: _sb_dot 1.2s ease-in-out infinite;
+    }
+    .sb-dots span:nth-child(2){animation-delay:.2s}
+    .sb-dots span:nth-child(3){animation-delay:.4s}
+    @keyframes _sb_dot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
+
+    /* Quick replies */
     #_sb_quick {
-      padding: 8px 16px 4px;
-      display: flex; gap: 8px; flex-wrap: wrap;
+      padding: 8px 10px 4px;
+      display: flex; gap: 6px; flex-wrap: wrap;
       flex-shrink: 0;
+      background: var(--wa-bg);
     }
     .sb-q {
-      background: var(--bg); border: 1.5px solid var(--bd);
+      background: var(--wa-white);
+      border: 1.5px solid var(--wa-green);
       border-radius: 20px; padding: 6px 14px;
-      font-size: 12px; color: var(--tx);
+      font-size: 12px; color: var(--wa-green3);
       cursor: pointer; white-space: nowrap;
-      transition: border-color .15s, color .15s, background .15s;
-      font-family: inherit;
+      transition: all .15s; font-family: inherit;
+      box-shadow: 0 1px 2px rgba(0,0,0,.07);
     }
-    .sb-q:hover { border-color: var(--p); color: var(--p); background: var(--bg2); }
+    .sb-q:hover { background: var(--wa-green); color: #fff; }
 
-    /* ── Input ── */
+    /* ── Input Bar (WhatsApp style) ── */
     #_sb_form {
-      padding: 10px 14px 14px;
-      border-top: 1px solid var(--bd);
-      display: flex; align-items: flex-end; gap: 10px;
+      padding: 8px 10px;
+      background: #f0f2f5;
+      display: flex; align-items: flex-end; gap: 8px;
       flex-shrink: 0;
+      border-top: 1px solid var(--wa-bd);
     }
     #_sb_inp {
-      flex: 1; border: 1.5px solid var(--bd); border-radius: 24px;
-      padding: 9px 16px; font-size: 14px; min-height: 40px;
-      resize: none; outline: none; background: var(--bg2);
-      color: var(--tx); max-height: 96px; overflow-y: auto;
-      transition: border-color .15s, box-shadow .15s;
+      flex: 1; border: none; border-radius: 22px;
+      padding: 10px 16px; font-size: 15px; min-height: 42px;
+      resize: none; outline: none;
+      background: var(--wa-white);
+      color: var(--wa-tx); max-height: 100px; overflow-y: auto;
       line-height: 1.5; font-family: inherit;
       direction: ${RTL ? "rtl" : "ltr"};
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
     }
-    #_sb_inp:focus {
-      border-color: var(--p);
-      box-shadow: 0 0 0 3px ${cfg.primaryColor}18;
-      background: #fff;
-    }
-    #_sb_inp::placeholder { color: var(--tx2); }
+    #_sb_inp::placeholder { color: var(--wa-tx2); }
 
     #_sb_send {
-      width: 40px; height: 40px; border-radius: 12px;
-      background: var(--p); border: none; cursor: pointer;
+      width: 46px; height: 46px; border-radius: 50%;
+      background: var(--wa-green);
+      border: none; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      transition: background .15s, transform .15s, opacity .15s;
+      transition: background .15s, transform .15s;
+      box-shadow: 0 2px 6px rgba(37,211,102,.4);
     }
-    #_sb_send:hover { background: var(--a); }
+    #_sb_send:hover { background: var(--wa-green2); }
     #_sb_send:active { transform: scale(.9); }
-    #_sb_send:disabled { opacity: .35; cursor: not-allowed; }
+    #_sb_send:disabled { background: var(--wa-bd); box-shadow: none; cursor: not-allowed; }
 
-    /* ── Footer ── */
+    /* Footer */
     #_sb_foot {
-      text-align: center; font-size: 10px; color: var(--tx2);
-      padding: 0 0 10px; flex-shrink: 0;
+      text-align: center; font-size: 11px; color: var(--wa-tx2);
+      padding: 4px 0 6px; background: #f0f2f5; flex-shrink: 0;
     }
 
+    /* Mobile */
     @media (max-width: 480px) {
       #_sb_win {
         ${SIDE}: 0; bottom: 0;
         width: 100vw;
-        height: min(92vh, 680px);
-        border-radius: var(--r) var(--r) 0 0;
+        height: 100vh;
+        border-radius: 0;
+        max-height: 100vh;
       }
-      #_sb_btn { ${SIDE}: 18px; bottom: 18px; }
+      #_sb_btn { ${SIDE}: 16px; bottom: 16px; }
     }
   `;
   document.head.appendChild(style);
@@ -313,11 +333,11 @@
   root.id = "_sb_root";
   root.innerHTML = `
     <button id="_sb_btn" aria-label="فتح المحادثة">
-      <svg id="_sb_btn_ico" width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="white"/>
+      <svg id="_sb_btn_ico" width="28" height="28" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.857L.054 23.394a.75.75 0 0 0 .918.918l5.538-1.478A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm5.53 16.617c-.247.694-1.234 1.328-1.805 1.413-.512.077-1.16.11-1.87-.118-.432-.136-.985-.319-1.694-.625-2.98-1.287-4.927-4.289-5.077-4.487-.148-.199-1.213-1.612-1.213-3.074 0-1.463.768-2.182 1.04-2.479.272-.298.594-.372.792-.372.199 0 .397.002.57.01.182.01.427-.069.669.51.247.595.841 2.058.916 2.207.075.149.124.322.025.52-.099.199-.148.323-.297.497-.148.173-.312.387-.446.52-.148.148-.303.31-.13.607.173.298.77 1.271 1.653 2.059 1.135 1.012 2.093 1.325 2.39 1.475.297.148.471.124.644-.075.173-.198.743-.867.94-1.164.199-.298.397-.249.67-.15.272.1 1.733.818 2.03.967.297.149.495.223.57.347.074.124.074.719-.174 1.413z"/>
       </svg>
-      <svg id="_sb_btn_x" width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M18 6L6 18M6 6l12 12" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+      <svg id="_sb_btn_x" width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18M6 6l12 12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
       </svg>
       <span id="_sb_badge"></span>
     </button>
@@ -329,17 +349,17 @@
           <div id="_sb_hd_name">${cfg.storeName}</div>
           <div id="_sb_hd_sub">
             <span id="_sb_online"></span>
-            <span>${RTL ? "مساعد الذكاء الاصطناعي" : "AI Assistant"}</span>
+            <span>${RTL ? "متصل الآن" : "Online now"}</span>
           </div>
         </div>
         <button id="_sb_hd_x" aria-label="إغلاق">✕</button>
-        <div id="_sb_pill" style="display:none"></div>
       </div>
 
       <div id="_sb_msgs">
+        <div class="sb-date"><span>${RTL ? "اليوم" : "Today"}</span></div>
         <div id="_sb_welcome">
           <div class="wi">${cfg.logoText}</div>
-          <div class="wt">${RTL ? "أهلاً بك!" : "Welcome!"}</div>
+          <div class="wt">${RTL ? "أهلاً! أنا موظف الذكاء الاصطناعي" : "Hi! I'm your AI Assistant"}</div>
           <div class="ws">${cfg.greeting}</div>
         </div>
       </div>
@@ -348,16 +368,16 @@
 
       <div id="_sb_form">
         <textarea id="_sb_inp" rows="1"
-          placeholder="${cfg.placeholder}"
+          placeholder="${cfg.placeholder || (RTL ? 'اكتب رسالة...' : 'Type a message...')}"
           aria-label="رسالتك"></textarea>
         <button id="_sb_send" disabled aria-label="إرسال">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="${RTL ? "M3 12h18M12 5l7 7-7 7" : "M3 12h18M12 5l7 7-7 7"}" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
           </svg>
         </button>
       </div>
       <div id="_sb_foot">
-        ${RTL ? "مدعوم بـ" : "Powered by"} <strong>StoreBot AI</strong>
+        ${RTL ? "مدعوم بـ" : "Powered by"} <strong>Dafor.ai</strong>
       </div>
     </div>
   `;
@@ -372,7 +392,6 @@
   const send   = root.querySelector("#_sb_send");
   const hd_x   = root.querySelector("#_sb_hd_x");
   const quick  = root.querySelector("#_sb_quick");
-  const pill   = root.querySelector("#_sb_pill");
 
   /* ── Helpers ── */
   const ts = () => new Date().toLocaleTimeString(RTL ? "ar" : "en", { hour: "2-digit", minute: "2-digit" });
@@ -437,8 +456,10 @@
 
     const t = document.createElement("div");
     t.className = "sb-t";
-    t.textContent = ts();
-    w.appendChild(b); w.appendChild(t);
+    const tick = role === "user" ? `<span class="sb-tick">✓✓</span>` : "";
+    t.innerHTML = `${ts()} ${tick}`;
+    b.appendChild(t);
+    w.appendChild(b);
     msgs.appendChild(w);
     msgs.scrollTop = msgs.scrollHeight;
 
@@ -482,38 +503,10 @@
       headers,
       body: JSON.stringify({ messages: messages.slice(-12), storeName: cfg.storeName }),
     });
-    if (res.status === 402) {
-      const data = await res.json().catch(() => ({}));
-      const err = new Error("credits");
-      err.type = "credits";
-      err.whatsapp = data.whatsapp || cfg.whatsapp || "";
-      throw err;
-    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     messages.push({ role: "assistant", content: data.reply });
     return data.reply;
-  }
-
-  function showWhatsAppFallback(whatsapp) {
-    root.querySelector("#_sb_ty")?.remove();
-    // إخفاء صندوق الكتابة
-    const form = root.querySelector("#_sb_form");
-    if (form) form.style.display = "none";
-    // رسالة
-    const w = document.createElement("div");
-    w.className = "sb-m bot";
-    w.innerHTML = `
-      <div class="sb-b" style="background:var(--bg3);color:var(--tx)">
-        ${RTL ? "انتهت المحادثات المتاحة هذا الشهر 😔<br>تواصل معنا مباشرة على واتساب!" : "Monthly chat limit reached 😔<br>Contact us directly on WhatsApp!"}
-        ${whatsapp ? `<br><br><a href="https://wa.me/${whatsapp.replace(/\D/g,"")}" target="_blank" rel="noopener"
-          style="display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;padding:10px 18px;border-radius:12px;text-decoration:none;font-weight:600;margin-top:6px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.857L.054 23.394a.75.75 0 0 0 .918.918l5.538-1.478A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.89 0-3.663-.497-5.197-1.367l-.374-.214-3.876 1.035 1.035-3.876-.214-.374A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-          ${RTL ? "تواصل على واتساب" : "WhatsApp Us"}
-        </a>` : ""}
-      </div>`;
-    msgs.appendChild(w);
-    msgs.scrollTop = msgs.scrollHeight;
   }
 
   async function sendMsg(text) {
@@ -528,12 +521,8 @@
       root.querySelector("#_sb_ty")?.remove();
       addMsg("bot", reply);
     } catch (e) {
-      if (e.type === "credits") {
-        showWhatsAppFallback(e.whatsapp);
-      } else {
-        root.querySelector("#_sb_ty")?.remove();
-        addMsg("bot", RTL ? `⚠️ خطأ: ${e.message}` : `⚠️ Error: ${e.message}`);
-      }
+      root.querySelector("#_sb_ty")?.remove();
+      addMsg("bot", RTL ? `⚠️ خطأ: ${e.message}` : `⚠️ Error: ${e.message}`);
     } finally {
       isBusy = false; send.disabled = !inp.value.trim();
       inp.focus();
@@ -543,10 +532,6 @@
   /* ── Health check ── */
   fetch(`${cfg.backendUrl}/health`).then(r => r.json()).then(d => {
     totalProducts = d.products || 0;
-    if (totalProducts > 0 && pill) {
-      pill.textContent = `${totalProducts.toLocaleString()} ${RTL ? "منتج" : "products"}`;
-      pill.style.display = "";
-    }
   }).catch(() => {});
 
   /* ── Events ── */
