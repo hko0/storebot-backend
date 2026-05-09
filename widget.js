@@ -214,10 +214,12 @@
     .sb-m.user { align-items: flex-end; }
 
     .sb-b {
-      max-width: 78%; padding: 10px 14px 22px;
+      max-width: 78%;
+      width: fit-content;
+      padding: 8px 12px 24px;
       font-size: 14px; line-height: 1.65;
       word-break: break-word; white-space: pre-wrap;
-      position: relative; min-width: 80px;
+      position: relative; min-width: 120px;
     }
     .sb-m.bot .sb-b {
       background: var(--wa-bubble-in);
