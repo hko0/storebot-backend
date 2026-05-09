@@ -252,10 +252,10 @@ function searchProducts(products, query, topN = 15) {
     if (text.includes(token)) return true;
     // مطابقة جزئية بأول 3 أحرف
     if (token.length >= 3 && text.includes(token.slice(0, 3))) return true;
-    // تحمّل خطأ إملائي واحد للكلمات الطويلة
-    if (token.length >= 5) {
+    // تحمّل خطأ إملائي واحد للكلمات من 3 أحرف فأكثر
+    if (token.length >= 3) {
       const words = text.split(' ');
-      return words.some(w => w.length >= 4 && levenshtein(token, w) <= 1);
+      return words.some(w => w.length >= 3 && levenshtein(token, w) <= 1);
     }
     return false;
   }
