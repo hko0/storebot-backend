@@ -216,10 +216,10 @@
     .sb-b {
       max-width: 78%;
       width: fit-content;
-      padding: 8px 12px 24px;
+      padding: 8px 14px;
       font-size: 14px; line-height: 1.65;
       word-break: break-word; white-space: pre-wrap;
-      position: relative; min-width: 120px;
+      min-width: 80px;
     }
     .sb-m.bot .sb-b {
       background: var(--wa-bubble-in);
@@ -233,20 +233,21 @@
       border-radius: 12px 0 12px 12px;
       box-shadow: 0 1px 2px rgba(0,0,0,.1);
     }
+    .sb-t {
+      font-size: 10px; color: var(--wa-tx2);
+      display: flex; align-items: center; gap: 3px;
+      margin-top: 2px; padding: 0 4px;
+      justify-content: flex-end;
+    }
+    .sb-m.bot .sb-t { justify-content: flex-start; }
+    .sb-m.user .sb-t .sb-tick { color: #53bdeb; }
     .sb-m.bot .sb-b a {
       color: var(--wa-green3); text-decoration: underline;
       word-break: break-all; cursor: pointer;
     }
     .sb-m.bot .sb-b a:hover { opacity: .8; }
 
-    /* Tick + time inside bubble */
-    .sb-t {
-      position: absolute; bottom: 4px;
-      ${RTL ? "left" : "right"}: 8px;
-      font-size: 10px; color: var(--wa-tx2);
-      display: flex; align-items: center; gap: 2px;
-    }
-    .sb-m.user .sb-t .sb-tick { color: #53bdeb; }
+    /* Tick + time outside bubble */
 
     /* Typing */
     .sb-dots { display: flex; gap: 4px; padding: 8px 14px 18px; }
@@ -448,9 +449,9 @@
     root.querySelector("#_sb_welcome")?.remove();
     const w = document.createElement("div");
     w.className = `sb-m ${role}`;
+
     const b = document.createElement("div");
     b.className = "sb-b";
-
     if (role === "bot") {
       b.innerHTML = renderText(text);
     } else {
@@ -461,8 +462,9 @@
     t.className = "sb-t";
     const tick = role === "user" ? `<span class="sb-tick">✓✓</span>` : "";
     t.innerHTML = `${ts()} ${tick}`;
-    b.appendChild(t);
+
     w.appendChild(b);
+    w.appendChild(t);
     msgs.appendChild(w);
     msgs.scrollTop = msgs.scrollHeight;
 
