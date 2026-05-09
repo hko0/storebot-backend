@@ -409,6 +409,7 @@ app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, 
         credits_used:    0,
         renewals_left:   1,
         is_active:       true,
+        onboarding_complete: true,
         plan_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       }).eq("id", storeId);
       console.log(`[Stripe] ✅ Activated ${plan} for store ${storeId}`);
