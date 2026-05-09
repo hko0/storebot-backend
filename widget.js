@@ -323,11 +323,19 @@
       #_sb_win {
         ${SIDE}: 0; bottom: 0;
         width: 100vw;
-        height: 100vh;
-        border-radius: 0;
-        max-height: 100vh;
+        height: 55vh;
+        border-radius: 16px 16px 0 0;
+        max-height: 55vh;
       }
       #_sb_btn { ${SIDE}: 16px; bottom: 16px; }
+      #_sb_msgs { padding: 10px 10px 6px; }
+      #_sb_inp { font-size: 16px; }
+    }
+
+    @supports (height: 100dvh) {
+      @media (max-width: 480px) {
+        #_sb_win { height: 55dvh; max-height: 55dvh; }
+      }
     }
   `;
   document.head.appendChild(style);
