@@ -218,17 +218,73 @@ async function incrementCredits(storeId, tokensUsed) {
 /* ─── Smart Search ── */
 function searchProducts(products, query, topN = 15) {
   if (!products.length) return [];
-  const tokens = query.toLowerCase().replace(/[^\w\s\u0600-\u06FF]/g, " ").split(/\s+/).filter(t => t.length > 1);
+
+  // ── تطبيع النص ──
+  const normalize = q => q
+    .toLowerCase()
+    .replace(/[أإآا]/g, 'ا')
+    .replace(/[ةه]/g, 'ه')
+    .replace(/[يى]/g, 'ي')
+    .replace(/[ؤو]/g, 'و')
+    .replace(/[,،.،;:!؟?]/g, ' ')   // تجاهل الفاصلة والنقطة
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // ── مسافة ليفنشتاين (تحمّل الأخطاء الإملائية) ──
+  function levenshtein(a, b) {
+    if (a === b) return 0;
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
+    matrix[0] = Array.from({ length: a.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        matrix[i][j] = b[i-1] === a[j-1]
+          ? matrix[i-1][j-1]
+          : Math.min(matrix[i-1][j-1] + 1, matrix[i][j-1] + 1, matrix[i-1][j] + 1);
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  // ── تحقق إذا كانت الكلمة قريبة إملائياً ──
+  function fuzzyMatch(token, text) {
+    if (text.includes(token)) return true;
+    // مطابقة جزئية بأول 3 أحرف
+    if (token.length >= 3 && text.includes(token.slice(0, 3))) return true;
+    // تحمّل خطأ إملائي واحد للكلمات الطويلة
+    if (token.length >= 5) {
+      const words = text.split(' ');
+      return words.some(w => w.length >= 4 && levenshtein(token, w) <= 1);
+    }
+    return false;
+  }
+
+  const normQuery = normalize(query);
+  const tokens = normQuery.split(/\s+/).filter(t => t.length > 1);
   if (!tokens.length) return products.filter(p => p.availability !== "out of stock").slice(0, topN);
+
   return products
     .map(p => {
+      const pName   = normalize(p.name);
+      const pBrand  = normalize(p.brand);
+      const pCat    = normalize(p.category);
+      const pSearch = normalize(p.searchText);
+
       let score = 0;
       for (const t of tokens) {
-        if (p.name.toLowerCase().includes(t)) score += 10;
-        if (p.brand.toLowerCase().includes(t)) score += 6;
-        if (p.category.toLowerCase().includes(t)) score += 5;
-        if (p.searchText.includes(t)) score += 2;
+        // مطابقة مباشرة
+        if (pName.includes(t))   score += 10;
+        if (pBrand.includes(t))  score += 6;
+        if (pCat.includes(t))    score += 5;
+        if (pSearch.includes(t)) score += 2;
+
+        // مطابقة fuzzy
+        if (score === 0 || fuzzyMatch(t, pName))   score += 4;
+        if (fuzzyMatch(t, pBrand))  score += 3;
+        if (fuzzyMatch(t, pSearch)) score += 1;
       }
+
       if (["in stock","متوفر","available"].includes(p.availability?.toLowerCase())) score += 1;
       if (p.salePrice && p.salePrice !== p.price) score += 0.5;
       return { p, score };
@@ -319,7 +375,7 @@ app.post("/api/chat", validateStore, async (req, res) => {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": process.env.CLAUDE_API_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-sonnet-4-5", max_tokens: 1024, system: sysPrompt, messages: messages.slice(-12) }),
+      body: JSON.stringify({ model: "claude-sonnet-4-5", max_tokens: 1024, system: sysPrompt, messages: messages.slice(-20) }),
     });
 
     if (!response.ok) {
