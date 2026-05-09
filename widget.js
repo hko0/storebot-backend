@@ -188,10 +188,12 @@
       text-align: center; margin: 8px 0;
     }
     .sb-date span {
+      display: inline-block;
       background: rgba(255,255,255,.85);
-      border-radius: 8px; padding: 4px 12px;
+      border-radius: 8px; padding: 4px 14px;
       font-size: 11px; color: var(--wa-tx2);
       box-shadow: 0 1px 2px rgba(0,0,0,.08);
+      white-space: nowrap;
     }
 
     /* Welcome */
@@ -272,6 +274,9 @@
       cursor: pointer; white-space: nowrap;
       transition: all .15s; font-family: inherit;
       box-shadow: 0 1px 2px rgba(0,0,0,.07);
+      display: inline-flex; align-items: center;
+      max-width: 100%;
+      overflow: hidden; text-overflow: ellipsis;
     }
     .sb-q:hover { background: var(--wa-green); color: #fff; }
 
