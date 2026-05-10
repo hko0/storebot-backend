@@ -39,10 +39,8 @@ app.use((req, res, next) => {
   express.json({ limit: "10kb" })(req, res, next);
 });
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map(s => s.trim())
-    : "*",
-  allowedHeaders: ["Content-Type", "x-store-key"],
+  origin: "*",
+  allowedHeaders: ["Content-Type", "x-store-key", "x-session-id", "x-refresh-secret"],
   methods: ["GET", "POST", "OPTIONS"],
 }));
 
