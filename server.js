@@ -397,7 +397,38 @@ app.post("/api/chat", validateStore, async (req, res) => {
 
   const relevant = searchProducts(products, searchQuery, store.max_products_search || 15);
   const ctx = buildContext(relevant);
-  const sysPrompt = buildSystemPrompt(ctx, storeName || store.name, products.length);
+
+  // ── جلب FAQs المتعلقة بالسؤال ──
+  let faqCtx = "";
+  try {
+    const { data: faqs } = await supabase
+      .from("faqs")
+      .select("question, answer")
+      .eq("store_id", store.id)
+      .eq("is_active", true);
+
+    if (faqs?.length) {
+      // بحث بسيط في الـ FAQs
+      const normalize = q => q.toLowerCase().replace(/[أإآا]/g,'ا').replace(/[ةه]/g,'ه').replace(/[يى]/g,'ي');
+      const queryNorm = normalize(searchQuery);
+      const matched = faqs
+        .map(f => {
+          const score = normalize(f.question).split(' ').filter(w => w.length > 1 && queryNorm.includes(w)).length;
+          return { f, score };
+        })
+        .filter(x => x.score > 0)
+        .sort((a,b) => b.score - a.score)
+        .slice(0, 5)
+        .map(x => x.f);
+
+      if (matched.length) {
+        faqCtx = "\n\n## أسئلة وأجوبة خاصة بالمتجر (أجب منها مباشرة إذا تطابقت):\n" +
+          matched.map(f => `س: ${f.question}\nج: ${f.answer}`).join("\n\n");
+      }
+    }
+  } catch {}
+
+  const sysPrompt = buildSystemPrompt(ctx, storeName || store.name, products.length) + faqCtx;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -518,7 +549,32 @@ app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, 
   res.json({ received: true });
 });
 
-app.get("/api/stats", async (req, res) => {
+/* ─── FAQs API ── */
+app.get("/api/faqs/:storeId", async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("faqs").select("*").eq("store_id", req.params.storeId).order("created_at", { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ faqs: data });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/faqs", async (req, res) => {
+  const { store_id, question, answer, source } = req.body;
+  if (!store_id || !question || !answer) return res.status(400).json({ error: "store_id, question, answer required" });
+  try {
+    const { data, error } = await supabase.from("faqs").insert({ store_id, question, answer, source: source || "manual" }).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ faq: data });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete("/api/faqs/:id", async (req, res) => {
+  try {
+    const { error } = await supabase.from("faqs").delete().eq("id", req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
   const feedUrl = process.env.FEED_URL;
   const products = await loadFeed(feedUrl, "default");
   const cats = [...new Set(products.map(p => p.category).filter(Boolean))].slice(0, 20);
