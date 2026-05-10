@@ -25,7 +25,7 @@
   if (_BAKED_KEY && !_BAKED_KEY.includes("%%")) cfg.storeKey = _BAKED_KEY;
 
   const RTL = cfg.lang === "ar";
-  const SIDE = RTL ? "left" : "right";
+  const SIDE = "right"; // دائماً على اليمين
 
   /* ── State ── */
   let messages  = [];
@@ -260,25 +260,6 @@
     .sb-dots span:nth-child(3){animation-delay:.4s}
     @keyframes _sb_dot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
 
-    /* Quick replies */
-    #_sb_quick {
-      padding: 10px 12px 8px;
-      display: flex; gap: 8px; flex-wrap: wrap;
-      flex-shrink: 0;
-      background: var(--wa-bg);
-    }
-    .sb-q {
-      background: var(--wa-white);
-      border: 1.5px solid var(--wa-green);
-      border-radius: 20px; padding: 7px 16px;
-      font-size: 13px; color: var(--wa-green3);
-      cursor: pointer; white-space: nowrap;
-      transition: all .15s; font-family: inherit;
-      box-shadow: 0 1px 3px rgba(0,0,0,.08);
-      display: inline-flex; align-items: center; gap: 4px;
-    }
-    .sb-q:hover { background: var(--wa-green); color: #fff; }
-
     /* ── Input Bar (WhatsApp style) ── */
     #_sb_form {
       padding: 8px 10px;
@@ -376,8 +357,6 @@
         </div>
       </div>
 
-      <div id="_sb_quick"></div>
-
       <div id="_sb_form">
         <textarea id="_sb_inp" rows="1"
           placeholder="${cfg.placeholder || (RTL ? 'اكتب رسالة...' : 'Type a message...')}"
@@ -403,7 +382,6 @@
   const inp    = root.querySelector("#_sb_inp");
   const send   = root.querySelector("#_sb_send");
   const hd_x   = root.querySelector("#_sb_hd_x");
-  const quick  = root.querySelector("#_sb_quick");
 
   /* ── Helpers ── */
   const ts = () => new Date().toLocaleTimeString(RTL ? "ar" : "en", { hour: "2-digit", minute: "2-digit" });
@@ -491,19 +469,6 @@
     msgs.scrollTop = msgs.scrollHeight;
   }
 
-  function renderQuick() {
-    const qs = RTL
-      ? ["🛍️ آخر المنتجات", "💰 العروض", "🔍 ابحث عن منتج", "📦 حالة الطلب"]
-      : ["🛍️ New arrivals", "💰 Deals", "🔍 Find product", "📦 Order status"];
-    quick.innerHTML = "";
-    qs.forEach(q => {
-      const el = document.createElement("button");
-      el.className = "sb-q"; el.textContent = q;
-      el.onclick = () => { quick.innerHTML = ""; sendMsg(q); };
-      quick.appendChild(el);
-    });
-  }
-
   /* ── API ── */
   async function callAPI(text) {
     messages.push({ role: "user", content: text });
@@ -528,11 +493,13 @@
     inp.value = ""; inp.style.height = "auto";
     send.disabled = true;
     addMsg("user", msg);
+    setTimeout(() => msgs.scrollTop = msgs.scrollHeight, 50);
     showTyping(); isBusy = true;
     try {
       const reply = await callAPI(msg);
       root.querySelector("#_sb_ty")?.remove();
       addMsg("bot", reply);
+      setTimeout(() => msgs.scrollTop = msgs.scrollHeight, 50);
     } catch (e) {
       root.querySelector("#_sb_ty")?.remove();
       addMsg("bot", RTL ? `⚠️ خطأ: ${e.message}` : `⚠️ Error: ${e.message}`);
@@ -552,7 +519,7 @@
     isOpen = !isOpen;
     root.classList.toggle("open", isOpen);
     badge.classList.remove("show"); unread = 0;
-    if (isOpen && messages.length === 0) renderQuick();
+    if (isOpen && messages.length === 0) {}
     if (isOpen) setTimeout(() => inp.focus(), 300);
   });
 
