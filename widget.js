@@ -399,7 +399,7 @@
         <button id="_sb_phone_btn">${RTL ? 'ابدأ المحادثة' : 'Start Chat'}</button>
       </div>
       <div id="_sb_hd">
-        <div id="_sb_av">${cfg.logoText}</div>
+        <div id="_sb_av">${avatarHtml}</div>
         <div id="_sb_hd_info">
           <div id="_sb_hd_name">${cfg.storeName}</div>
           <div id="_sb_hd_sub">
@@ -413,7 +413,7 @@
       <div id="_sb_msgs">
         <div class="sb-date"><span>${RTL ? "اليوم" : "Today"}</span></div>
         <div id="_sb_welcome">
-          <div class="wi">${cfg.logoText}</div>
+          ${welcomeIcon}
           <div class="wt">${RTL ? "أهلاً! أنا موظف الذكاء الاصطناعي" : "Hi! I'm your AI Assistant"}</div>
           <div class="ws">${cfg.greeting}</div>
         </div>
@@ -531,7 +531,13 @@
     msgs.scrollTop = msgs.scrollHeight;
   }
 
-  /* ── Phone Screen ── */
+  const avatarHtml = cfg.logoUrl
+    ? `<img src="${cfg.logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.parentElement.textContent='${cfg.logoText}'">`
+    : cfg.logoText;
+
+  const welcomeIcon = cfg.logoUrl
+    ? `<img src="${cfg.logoUrl}" style="width:56px;height:56px;object-fit:cover;border-radius:50%;margin-bottom:8px;" onerror="this.style.display='none'">`
+    : `<div style="font-size:40px;margin-bottom:8px;">${cfg.logoText}</div>`;
   const phoneScreen = root.querySelector("#_sb_phone_screen");
   const phoneInp    = root.querySelector("#_sb_phone_inp");
   const phoneBtn    = root.querySelector("#_sb_phone_btn");
