@@ -304,7 +304,8 @@
     #_sb_phone_screen {
       position: absolute; inset: 0;
       background: var(--wa-white);
-      display: flex; flex-direction: column;
+      display: none;
+      flex-direction: column;
       align-items: center; justify-content: center;
       padding: 32px 24px; text-align: center;
       z-index: 10;
@@ -378,7 +379,22 @@
         <div class="ps-icon">📱</div>
         <div class="ps-title">${RTL ? 'أهلاً بك!' : 'Welcome!'}</div>
         <div class="ps-sub">${RTL ? 'أدخل رقم جوالك لنبدأ المحادثة ونحفظ طلباتك' : 'Enter your phone number to start chatting'}</div>
-        <input id="_sb_phone_inp" type="tel" placeholder="${RTL ? '05XXXXXXXX' : '+1234567890'}" inputmode="tel" />
+        <div style="display:flex;gap:8px;width:100%;">
+          <select id="_sb_country_code" style="padding:12px 8px;border:1.5px solid #d1d7db;border-radius:12px;font-size:15px;outline:none;background:#fff;color:#111b21;cursor:pointer;flex-shrink:0;font-family:inherit;">
+            <option value="966">🇸🇦 +966</option>
+            <option value="971">🇦🇪 +971</option>
+            <option value="965">🇰🇼 +965</option>
+            <option value="974">🇶🇦 +974</option>
+            <option value="973">🇧🇭 +973</option>
+            <option value="968">🇴🇲 +968</option>
+            <option value="962">🇯🇴 +962</option>
+            <option value="20">🇪🇬 +20</option>
+            <option value="1">🇺🇸 +1</option>
+            <option value="44">🇬🇧 +44</option>
+          </select>
+          <input id="_sb_phone_inp" type="tel" placeholder="${RTL ? '5XXXXXXXX' : '5XXXXXXXX'}" inputmode="numeric"
+            style="flex:1;" />
+        </div>
         <div id="_sb_phone_err"></div>
         <button id="_sb_phone_btn">${RTL ? 'ابدأ المحادثة' : 'Start Chat'}</button>
       </div>
@@ -535,12 +551,13 @@
   }
 
   function submitPhone() {
-    const val = phoneInp.value.trim();
-    if (!validatePhone(val)) {
-      phoneErr.textContent = RTL ? 'أدخل رقماً صحيحاً (9 أرقام على الأقل)' : 'Enter a valid phone number';
+    const val = phoneInp.value.trim().replace(/^0+/, ''); // حذف الأصفار من البداية
+    const code = root.querySelector("#_sb_country_code")?.value || "966";
+    if (!val || val.replace(/\D/g,'').length < 8) {
+      phoneErr.textContent = RTL ? 'أدخل رقماً صحيحاً' : 'Enter a valid number';
       return;
     }
-    phoneNumber = val.replace(/\s/g,'');
+    phoneNumber = code + val.replace(/\D/g,''); // مثال: 966551227891
     localStorage.setItem(`_sb_phone_${cfg.storeKey}`, phoneNumber);
     hidePhoneScreen();
     addMsg("bot", cfg.greeting);
@@ -549,13 +566,11 @@
   phoneBtn.addEventListener("click", submitPhone);
   phoneInp.addEventListener("keydown", e => { if (e.key === "Enter") submitPhone(); });
 
-  // إذا عنده رقم محفوظ → تجاوز الشاشة مباشرة
+  // إذا عنده رقم محفوظ → أخفِ الشاشة، وإلا تبقى مخفية حتى يضغط الزر
   if (phoneNumber) {
     hidePhoneScreen();
-  } else {
-    // إخفاء شاشة الجوال في البداية حتى يفتح الويدجت
-    phoneScreen.style.display = 'none';
   }
+  // الشاشة مخفية بالـ CSS افتراضياً — showPhoneScreen() تُفعّلها عند الفتح
   async function callAPI(text) {
     messages.push({ role: "user", content: text });
     const headers = { "Content-Type": "application/json" };
