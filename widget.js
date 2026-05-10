@@ -33,6 +33,7 @@
   let isBusy    = false;
   let unread    = 0;
   let totalProducts = 0;
+  let phoneNumber = localStorage.getItem(`_sb_phone_${cfg.storeKey}`) || "";
 
   /* ── Mount ── */
   if (document.getElementById("_sb_root")) return;
@@ -299,8 +300,43 @@
       padding: 4px 0 6px; background: #f0f2f5; flex-shrink: 0;
     }
 
-    /* Mobile */
+    /* Phone Screen */
+    #_sb_phone_screen {
+      position: absolute; inset: 0;
+      background: var(--wa-white);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px 24px; text-align: center;
+      z-index: 10;
+      border-radius: 16px;
+    }
+    #_sb_phone_screen .ps-icon { font-size: 48px; margin-bottom: 16px; }
+    #_sb_phone_screen .ps-title { font-size: 18px; font-weight: 700; color: #111b21; margin-bottom: 8px; }
+    #_sb_phone_screen .ps-sub { font-size: 13px; color: #667781; margin-bottom: 24px; line-height: 1.6; }
+    #_sb_phone_inp {
+      width: 100%; padding: 12px 16px;
+      border: 1.5px solid #d1d7db; border-radius: 12px;
+      font-size: 16px; outline: none; text-align: center;
+      font-family: inherit; color: #111b21;
+      direction: ltr; letter-spacing: 2px;
+      transition: border-color .2s;
+    }
+    #_sb_phone_inp:focus { border-color: var(--wa-green); }
+    #_sb_phone_inp::placeholder { letter-spacing: 0; color: #aaa; }
+    #_sb_phone_btn {
+      width: 100%; margin-top: 12px; padding: 13px;
+      background: var(--wa-green); color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      transition: opacity .15s;
+    }
+    #_sb_phone_btn:hover { opacity: .88; }
+    #_sb_phone_err { font-size: 12px; color: #ef4444; margin-top: 8px; min-height: 16px; }
+
+    /* Phone bottom sheet fix */
     @media (max-width: 480px) {
+      #_sb_phone_screen { border-radius: 16px 16px 0 0; }
       #_sb_win {
         ${SIDE}: 0; bottom: 0;
         width: 100vw;
@@ -336,6 +372,16 @@
     </button>
 
     <div id="_sb_win" role="dialog" aria-modal="true">
+
+      <!-- Phone Screen -->
+      <div id="_sb_phone_screen">
+        <div class="ps-icon">📱</div>
+        <div class="ps-title">${RTL ? 'أهلاً بك!' : 'Welcome!'}</div>
+        <div class="ps-sub">${RTL ? 'أدخل رقم جوالك لنبدأ المحادثة ونحفظ طلباتك' : 'Enter your phone number to start chatting'}</div>
+        <input id="_sb_phone_inp" type="tel" placeholder="${RTL ? '05XXXXXXXX' : '+1234567890'}" inputmode="tel" />
+        <div id="_sb_phone_err"></div>
+        <button id="_sb_phone_btn">${RTL ? 'ابدأ المحادثة' : 'Start Chat'}</button>
+      </div>
       <div id="_sb_hd">
         <div id="_sb_av">${cfg.logoText}</div>
         <div id="_sb_hd_info">
@@ -469,13 +515,54 @@
     msgs.scrollTop = msgs.scrollHeight;
   }
 
-  /* ── API ── */
+  /* ── Phone Screen ── */
+  const phoneScreen = root.querySelector("#_sb_phone_screen");
+  const phoneInp    = root.querySelector("#_sb_phone_inp");
+  const phoneBtn    = root.querySelector("#_sb_phone_btn");
+  const phoneErr    = root.querySelector("#_sb_phone_err");
+
+  function showPhoneScreen() {
+    phoneScreen.style.display = 'flex';
+    setTimeout(() => phoneInp.focus(), 300);
+  }
+
+  function hidePhoneScreen() {
+    phoneScreen.style.display = 'none';
+  }
+
+  function validatePhone(p) {
+    return p.replace(/\D/g,'').length >= 9;
+  }
+
+  function submitPhone() {
+    const val = phoneInp.value.trim();
+    if (!validatePhone(val)) {
+      phoneErr.textContent = RTL ? 'أدخل رقماً صحيحاً (9 أرقام على الأقل)' : 'Enter a valid phone number';
+      return;
+    }
+    phoneNumber = val.replace(/\s/g,'');
+    localStorage.setItem(`_sb_phone_${cfg.storeKey}`, phoneNumber);
+    hidePhoneScreen();
+    addMsg("bot", cfg.greeting);
+  }
+
+  phoneBtn.addEventListener("click", submitPhone);
+  phoneInp.addEventListener("keydown", e => { if (e.key === "Enter") submitPhone(); });
+
+  // إذا عنده رقم محفوظ → تجاوز الشاشة مباشرة
+  if (phoneNumber) {
+    hidePhoneScreen();
+  } else {
+    // إخفاء شاشة الجوال في البداية حتى يفتح الويدجت
+    phoneScreen.style.display = 'none';
+  }
   async function callAPI(text) {
     messages.push({ role: "user", content: text });
     const headers = { "Content-Type": "application/json" };
     // قراءة المفتاح وقت الإرسال لضمان تحميله
     const storeKey = cfg.storeKey || window.StoreBotConfig?.storeKey || "";
     if (storeKey) headers["x-store-key"] = storeKey;
+    if (phoneNumber) headers["x-session-id"] = phoneNumber;
     const res = await fetch(`${cfg.backendUrl}/api/chat`, {
       method: "POST",
       headers,
@@ -519,8 +606,14 @@
     isOpen = !isOpen;
     root.classList.toggle("open", isOpen);
     badge.classList.remove("show"); unread = 0;
-    if (isOpen && messages.length === 0) {}
-    if (isOpen) setTimeout(() => inp.focus(), 300);
+    if (isOpen) {
+      if (!phoneNumber) {
+        showPhoneScreen();
+      } else {
+        if (messages.length === 0) addMsg("bot", cfg.greeting);
+        setTimeout(() => inp.focus(), 300);
+      }
+    }
   });
 
   hd_x.addEventListener("click", () => { isOpen = false; root.classList.remove("open"); });
