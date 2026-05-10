@@ -359,6 +359,14 @@
   document.head.appendChild(style);
 
   /* ── DOM ── */
+  const avatarHtml = cfg.logoUrl
+    ? `<img src="${cfg.logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.parentElement.textContent='${cfg.logoText}'">`
+    : cfg.logoText;
+
+  const welcomeIcon = cfg.logoUrl
+    ? `<img src="${cfg.logoUrl}" style="width:56px;height:56px;object-fit:cover;border-radius:50%;margin-bottom:8px;" onerror="this.style.display='none'">`
+    : `<div style="font-size:40px;margin-bottom:8px;">${cfg.logoText}</div>`;
+
   const root = document.createElement("div");
   root.id = "_sb_root";
   root.innerHTML = `
@@ -531,13 +539,6 @@
     msgs.scrollTop = msgs.scrollHeight;
   }
 
-  const avatarHtml = cfg.logoUrl
-    ? `<img src="${cfg.logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.parentElement.textContent='${cfg.logoText}'">`
-    : cfg.logoText;
-
-  const welcomeIcon = cfg.logoUrl
-    ? `<img src="${cfg.logoUrl}" style="width:56px;height:56px;object-fit:cover;border-radius:50%;margin-bottom:8px;" onerror="this.style.display='none'">`
-    : `<div style="font-size:40px;margin-bottom:8px;">${cfg.logoText}</div>`;
   const phoneScreen = root.querySelector("#_sb_phone_screen");
   const phoneInp    = root.querySelector("#_sb_phone_inp");
   const phoneBtn    = root.querySelector("#_sb_phone_btn");
