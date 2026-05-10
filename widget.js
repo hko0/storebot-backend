@@ -88,9 +88,7 @@
     }
     #_sb_btn:active { transform: scale(.94); }
 
-    #_sb_root.open #_sb_btn {
-      display: none;
-    }
+    #_sb_btn_ico, #_sb_btn_x {
       position: absolute;
       transition: opacity .18s, transform .22s;
     }
