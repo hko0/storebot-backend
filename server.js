@@ -112,7 +112,7 @@ async function loadFeed(feedUrl, storeId, store = {}) {
 /* ─── Default store (legacy) ── */
 const defaultStore = {
   id: "default",
-  name: process.env.STORE_NAME || "متجرنا",
+  name: process.env.STORE_NAME || "متجرنا الإلكتروني",
   feed_url: process.env.FEED_URL,
   credits_total: 999999,
   credits_used: 0,
@@ -305,7 +305,7 @@ function buildContext(products) {
 
 /* ─── System Prompt ── */
 function buildSystemPrompt(ctx, store, total) {
-  const storeName = store.name || "متجرنا";
+  const storeName = store.name || store.domain || "الشركة";
   const lang = store.lang || "ar";
   const currency = store.currency || "ريال";
   const isService = store.business_type === 'service';
@@ -420,18 +420,26 @@ app.post("/api/chat", validateStore, async (req, res) => {
       .eq("is_active", true);
 
     if (faqs?.length) {
-      // بحث بسيط في الـ FAQs
-      const normalize = q => q.toLowerCase().replace(/[أإآا]/g,'ا').replace(/[ةه]/g,'ه').replace(/[يى]/g,'ي');
-      const queryNorm = normalize(searchQuery);
-      const matched = faqs
-        .map(f => {
-          const score = normalize(f.question).split(' ').filter(w => w.length > 1 && queryNorm.includes(w)).length;
-          return { f, score };
-        })
-        .filter(x => x.score > 0)
-        .sort((a,b) => b.score - a.score)
-        .slice(0, 5)
-        .map(x => x.f);
+      const isService = store.business_type === 'service';
+
+      let matched;
+      if (isService) {
+        // للخدمات → أرسل كل الـ FAQs دائماً
+        matched = faqs;
+      } else {
+        // للمتاجر → أرسل الأكثر صلة بالسؤال فقط
+        const normalize = q => q.toLowerCase().replace(/[أإآا]/g,'ا').replace(/[ةه]/g,'ه').replace(/[يى]/g,'ي');
+        const queryNorm = normalize(searchQuery);
+        matched = faqs
+          .map(f => {
+            const score = normalize(f.question).split(' ').filter(w => w.length > 1 && queryNorm.includes(w)).length;
+            return { f, score };
+          })
+          .filter(x => x.score > 0)
+          .sort((a,b) => b.score - a.score)
+          .slice(0, 5)
+          .map(x => x.f);
+      }
 
       if (matched.length) {
         faqCtx = "\n\n## أسئلة وأجوبة خاصة بالمتجر (أجب منها مباشرة إذا تطابقت):\n" +
@@ -440,7 +448,7 @@ app.post("/api/chat", validateStore, async (req, res) => {
     }
   } catch {}
 
-  const sysPrompt = buildSystemPrompt(ctx, storeName || store.name, products.length) + faqCtx;
+  const sysPrompt = buildSystemPrompt(ctx, store, products.length) + faqCtx;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
