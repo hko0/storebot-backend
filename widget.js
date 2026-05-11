@@ -299,6 +299,15 @@
       text-align: center; font-size: 11px; color: var(--wa-tx2);
       padding: 4px 0 6px; background: #f0f2f5; flex-shrink: 0;
     }
+    #_sb_foot a {
+      color: var(--wa-green2) !important;
+      text-decoration: none !important;
+      font-weight: 600 !important;
+      pointer-events: all !important;
+      display: inline !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
 
     /* Phone Screen */
     #_sb_phone_screen {
@@ -438,7 +447,7 @@
         </button>
       </div>
       <div id="_sb_foot">
-        ${RTL ? "مدعوم بـ" : "Powered by"} <strong>Dafor.ai</strong>
+        تم تطويره بواسطة <a href="https://dafor.ai" target="_blank" style="color:var(--wa-green2);text-decoration:none;font-weight:600;">Dafor.ai</a> — جميع الحقوق محفوظة
       </div>
     </div>
   `;
@@ -593,6 +602,29 @@
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     messages.push({ role: "assistant", content: data.reply });
+
+    // تحقق من HANDOFF
+    if (data.reply === "__HANDOFF__") {
+      const wa = data.whatsapp;
+      const waLink = wa ? `https://wa.me/${wa.replace(/\D/g,'')}` : null;
+      const handoffMsg = RTL
+        ? `يسعدني أساعدك! هذا الاستفسار يحتاج تواصل مع فريق الدعم مباشرة 👇`
+        : `I'd love to help! This needs direct support contact 👇`;
+      addMsg("bot", handoffMsg);
+      if (waLink) {
+        const waBtn = document.createElement("div");
+        waBtn.className = "sb-m bot";
+        waBtn.innerHTML = `<a href="${waLink}" target="_blank"
+          style="display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;padding:10px 18px;border-radius:12px;font-size:14px;font-weight:600;text-decoration:none;margin-top:4px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
+          ${RTL ? 'تواصل عبر واتساب' : 'Contact via WhatsApp'}
+        </a>`;
+        msgs.appendChild(waBtn);
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+      return null;
+    }
+
     return data.reply;
   }
 
@@ -607,7 +639,7 @@
     try {
       const reply = await callAPI(msg);
       root.querySelector("#_sb_ty")?.remove();
-      addMsg("bot", reply);
+      if (reply) addMsg("bot", reply);
       setTimeout(() => msgs.scrollTop = msgs.scrollHeight, 50);
     } catch (e) {
       root.querySelector("#_sb_ty")?.remove();
