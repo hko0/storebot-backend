@@ -123,8 +123,7 @@ const defaultStore = {
 async function validateStore(req, res, next) {
   const apiKey = req.headers["x-store-key"];
   if (!apiKey) {
-    req.store = defaultStore;
-    return next();
+    return res.status(401).json({ error: "مفتاح المتجر غير موجود" });
   }
   try {
     const { data: store, error } = await supabase
@@ -133,7 +132,11 @@ async function validateStore(req, res, next) {
       .eq("api_key", apiKey)
       .eq("is_active", true)
       .single();
-    if (error || !store) { console.error("[Auth] Supabase error:", JSON.stringify(error), "| store:", store, "| key:", apiKey); req.store = defaultStore; return next(); }
+
+    if (error || !store) {
+      console.error("[Auth] Store not found for key:", apiKey);
+      return res.status(404).json({ error: "المتجر غير موجود أو غير نشط" });
+    }
 
     // تحقق من انتهاء الباقة
     const now = new Date();
@@ -158,8 +161,7 @@ async function validateStore(req, res, next) {
     next();
   } catch (err) {
     console.error("[Auth] Error:", err.message);
-    req.store = defaultStore;
-    next();
+    return res.status(500).json({ error: "خطأ في التحقق من المتجر" });
   }
 }
 
