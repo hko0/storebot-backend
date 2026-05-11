@@ -518,8 +518,8 @@ app.post("/api/create-checkout", async (req, res) => {
       payment_method_types: ["card"],
       mode: "subscription",
       line_items: [{ price: STRIPE_PRICES[plan], quantity: 1 }],
-      success_url: successUrl || "https://dafor.ai/dashboard.html?payment=success",
-      cancel_url:  cancelUrl  || "https://dafor.ai/dashboard.html?payment=cancelled",
+      success_url: successUrl || "https://dafor.ai/success.html",
+      cancel_url:  cancelUrl  || "https://dafor.ai/setup.html",
       metadata: { storeId, plan },
       subscription_data: { metadata: { storeId, plan } },
     });
