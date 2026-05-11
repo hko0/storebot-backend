@@ -506,8 +506,18 @@
       }
     );
 
+    // تحويل أرقام الجوال لروابط واتساب
+    const withPhones = linked.replace(
+      /\b((?:\+?966|00966)5\d{8}|05\d{8})\b/g,
+      (num) => {
+        const digits = num.replace(/\D/g, "");
+        const wa = digits.startsWith("0") ? "966" + digits.slice(1) : digits;
+        return `<a href="https://wa.me/${wa}" target="_blank" rel="noopener">${num}</a>`;
+      }
+    );
+
     // تحويل **bold**
-    return linked.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    return withPhones.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   }
 
   function addMsg(role, text) {

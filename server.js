@@ -317,7 +317,7 @@ function buildSystemPrompt(ctx, store, total) {
     store.working_hours ? `## ساعات العمل:\n${store.working_hours}` : "",
     store.shipping_info ? `## معلومات الشحن:\n${store.shipping_info}` : "",
     store.return_policy ? `## سياسة الإرجاع:\n${store.return_policy}` : "",
-    store.whatsapp ? `## واتساب الدعم: ${store.whatsapp}` : "",
+    store.whatsapp ? `## واتساب الدعم: إذا طلب العميل التواصل مع الدعم، أرسل له هذا الرابط مباشرة: https://wa.me/${store.whatsapp.replace(/\D/g,"")}` : "",
     store.support_email ? `## البريد الإلكتروني: ${store.support_email}` : "",
   ].filter(Boolean).join("\n\n");
 
