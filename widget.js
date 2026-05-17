@@ -95,6 +95,7 @@
     #_sb_btn_x { opacity: 0; transform: rotate(-45deg) scale(.7); }
     #_sb_root.open #_sb_btn_ico { opacity: 0; transform: rotate(45deg) scale(.7); }
     #_sb_root.open #_sb_btn_x   { opacity: 1; transform: rotate(0) scale(1); }
+    #_sb_root.open #_sb_btn     { display: none !important; }
 
     #_sb_badge {
       position: absolute; top: 0; ${SIDE}: 0;
