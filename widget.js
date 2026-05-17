@@ -7,7 +7,6 @@
 
   const BACKEND = "https://storebot-backend-production.up.railway.app";
 
-  /* ── المفتاح مخبّز من السيرفر مباشرة ── */
   const _BAKED_KEY = "%%STORE_KEY%%";
 
   const cfg = Object.assign({
@@ -409,7 +408,7 @@
             <option value="1">🇺🇸 +1</option>
             <option value="44">🇬🇧 +44</option>
           </select>
-          <input id="_sb_phone_inp" type="tel" placeholder="${RTL ? '5XXXXXXXX' : '5XXXXXXXX'}" inputmode="numeric"
+          <input id="_sb_phone_inp" type="tel" placeholder="..." inputmode="numeric" maxlength="9"
             style="flex:1;" />
         </div>
         <div id="_sb_phone_err"></div>
@@ -506,18 +505,8 @@
       }
     );
 
-    // تحويل أرقام الجوال لروابط واتساب
-    const withPhones = linked.replace(
-      /\b((?:\+?966|00966)5\d{8}|05\d{8})\b/g,
-      (num) => {
-        const digits = num.replace(/\D/g, "");
-        const wa = digits.startsWith("0") ? "966" + digits.slice(1) : digits;
-        return `<a href="https://wa.me/${wa}" target="_blank" rel="noopener">${num}</a>`;
-      }
-    );
-
     // تحويل **bold**
-    return withPhones.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    return linked.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   }
 
   function addMsg(role, text) {
@@ -591,6 +580,9 @@
 
   phoneBtn.addEventListener("click", submitPhone);
   phoneInp.addEventListener("keydown", e => { if (e.key === "Enter") submitPhone(); });
+  phoneInp.addEventListener("input", e => {
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0, 9);
+});
 
   // إذا عنده رقم محفوظ → أخفِ الشاشة، وإلا تبقى مخفية حتى يضغط الزر
   if (phoneNumber) {
