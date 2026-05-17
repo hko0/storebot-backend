@@ -7,6 +7,7 @@
 
   const BACKEND = "https://storebot-backend-production.up.railway.app";
 
+  /* ── المفتاح مخبّز من السيرفر مباشرة ── */
   const _BAKED_KEY = "%%STORE_KEY%%";
 
   const cfg = Object.assign({
@@ -395,21 +396,21 @@
         <div class="ps-icon">📱</div>
         <div class="ps-title">${RTL ? 'أهلاً بك!' : 'Welcome!'}</div>
         <div class="ps-sub">${RTL ? 'أدخل رقم جوالك لنبدأ المحادثة ونحفظ طلباتك' : 'Enter your phone number to start chatting'}</div>
-        <div style="display:flex;gap:8px;width:100%;">
-          <select id="_sb_country_code" style="padding:12px 8px;border:1.5px solid #d1d7db;border-radius:12px;font-size:15px;outline:none;background:#fff;color:#111b21;cursor:pointer;flex-shrink:0;font-family:inherit;">
-            <option value="966">🇸🇦 +966</option>
-            <option value="971">🇦🇪 +971</option>
-            <option value="965">🇰🇼 +965</option>
-            <option value="974">🇶🇦 +974</option>
-            <option value="973">🇧🇭 +973</option>
-            <option value="968">🇴🇲 +968</option>
-            <option value="962">🇯🇴 +962</option>
-            <option value="20">🇪🇬 +20</option>
-            <option value="1">🇺🇸 +1</option>
-            <option value="44">🇬🇧 +44</option>
+        <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+          <select id="_sb_country_code" style="padding:12px 14px;border:1.5px solid #d1d7db;border-radius:12px;font-size:15px;outline:none;background:#fff;color:#111b21;cursor:pointer;font-family:inherit;width:100%;direction:ltr;">
+            <option value="966">🇸🇦 السعودية +966</option>
+            <option value="971">🇦🇪 الإمارات +971</option>
+            <option value="965">🇰🇼 الكويت +965</option>
+            <option value="974">🇶🇦 قطر +974</option>
+            <option value="973">🇧🇭 البحرين +973</option>
+            <option value="968">🇴🇲 عُمان +968</option>
+            <option value="962">🇯🇴 الأردن +962</option>
+            <option value="20">🇪🇬 مصر +20</option>
+            <option value="1">🇺🇸 USA +1</option>
+            <option value="44">🇬🇧 UK +44</option>
           </select>
-          <input id="_sb_phone_inp" type="tel" placeholder="..." inputmode="numeric" maxlength="9"
-            style="flex:1;" />
+          <input id="_sb_phone_inp" type="tel" placeholder="${RTL ? '5XXXXXXXX' : '5XXXXXXXX'}" inputmode="numeric" maxlength="9"
+            style="width:100%;" />
         </div>
         <div id="_sb_phone_err"></div>
         <button id="_sb_phone_btn">${RTL ? 'ابدأ المحادثة' : 'Start Chat'}</button>
@@ -581,8 +582,8 @@
   phoneBtn.addEventListener("click", submitPhone);
   phoneInp.addEventListener("keydown", e => { if (e.key === "Enter") submitPhone(); });
   phoneInp.addEventListener("input", e => {
-  e.target.value = e.target.value.replace(/\D/g, '').slice(0, 9);
-});
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 9);
+  });
 
   // إذا عنده رقم محفوظ → أخفِ الشاشة، وإلا تبقى مخفية حتى يضغط الزر
   if (phoneNumber) {
@@ -603,9 +604,8 @@
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    messages.push({ role: "assistant", content: data.reply });
 
-    // تحقق من HANDOFF
+    // تحقق من HANDOFF قبل إضافته للـ messages
     if (data.reply === "__HANDOFF__") {
       const wa = data.whatsapp;
       const waLink = wa ? `https://wa.me/${wa.replace(/\D/g,'')}` : null;
@@ -627,6 +627,7 @@
       return null;
     }
 
+    messages.push({ role: "assistant", content: data.reply });
     return data.reply;
   }
 
