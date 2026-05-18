@@ -95,7 +95,6 @@
     #_sb_btn_x { opacity: 0; transform: rotate(-45deg) scale(.7); }
     #_sb_root.open #_sb_btn_ico { opacity: 0; transform: rotate(45deg) scale(.7); }
     #_sb_root.open #_sb_btn_x   { opacity: 1; transform: rotate(0) scale(1); }
-    #_sb_root.open #_sb_btn     { display: none !important; }
 
     #_sb_badge {
       position: absolute; top: 0; ${SIDE}: 0;
@@ -598,10 +597,17 @@
     const storeKey = cfg.storeKey || window.StoreBotConfig?.storeKey || "";
     if (storeKey) headers["x-store-key"] = storeKey;
     if (phoneNumber) headers["x-session-id"] = phoneNumber;
+
+    // أرسل معلومات الصفحة الحالية
+    const pageInfo = {
+      url: window.location.href,
+      title: document.title || "",
+    };
+
     const res = await fetch(`${cfg.backendUrl}/api/chat`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ messages: messages.slice(-12), storeName: cfg.storeName }),
+      body: JSON.stringify({ messages: messages.slice(-12), storeName: cfg.storeName, pageInfo }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();

@@ -374,7 +374,7 @@ app.post("/api/refresh-feed", async (req, res) => {
 
 app.post("/api/chat", validateStore, async (req, res) => {
   const startTime = Date.now();
-  const { messages, storeName } = req.body;
+  const { messages, storeName, pageInfo } = req.body;
   const store = req.store;
 
   if (!Array.isArray(messages) || !messages.length)
@@ -453,7 +453,12 @@ app.post("/api/chat", validateStore, async (req, res) => {
     }
   } catch {}
 
-  const sysPrompt = buildSystemPrompt(ctx, store, products.length) + faqCtx;
+  let sysPrompt = buildSystemPrompt(ctx, store, products.length) + faqCtx;
+
+  // إضافة سياق الصفحة الحالية
+  if (pageInfo?.url) {
+    sysPrompt += `\n\n## سياق الصفحة الحالية:\nالعميل يتصفح حالياً صفحة: "${pageInfo.title || pageInfo.url}"\nرابط الصفحة: ${pageInfo.url}\nإذا سأل عن "هذا المنتج" أو "هذا" أو "اللي قدامي" — افهم أنه يقصد المنتج/الصفحة التي يتصفحها الآن. حاول تطابق عنوان الصفحة مع أسماء المنتجات المتاحة.`;
+  }
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
