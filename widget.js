@@ -598,10 +598,24 @@
     if (storeKey) headers["x-store-key"] = storeKey;
     if (phoneNumber) headers["x-session-id"] = phoneNumber;
 
-    // أرسل معلومات الصفحة الحالية
+    // أرسل معلومات الصفحة الحالية — نجمع كل العناوين المهمة
+    const headings = [];
+    document.querySelectorAll('h1, h2, h3').forEach(el => {
+      const text = el.textContent.trim().slice(0, 200);
+      if (text && !headings.includes(text)) headings.push(text);
+    });
+    // أول 5 عناوين فقط (الأهم)
+    const topHeadings = headings.slice(0, 5).join(' | ');
+
+    // Meta tags
+    const ogTitle = document.querySelector('meta[property="og:title"]')?.content || '';
+    const metaDesc = document.querySelector('meta[name="description"]')?.content || '';
+
     const pageInfo = {
       url: window.location.href,
-      title: document.title || "",
+      title: topHeadings || document.title || "",
+      ogTitle: ogTitle.slice(0, 200),
+      description: metaDesc.slice(0, 200),
     };
 
     const res = await fetch(`${cfg.backendUrl}/api/chat`, {
