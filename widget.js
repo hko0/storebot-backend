@@ -95,6 +95,7 @@
     #_sb_btn_x { opacity: 0; transform: rotate(-45deg) scale(.7); }
     #_sb_root.open #_sb_btn_ico { opacity: 0; transform: rotate(45deg) scale(.7); }
     #_sb_root.open #_sb_btn_x   { opacity: 1; transform: rotate(0) scale(1); }
+    #_sb_root.open #_sb_btn     { display: none !important; }
 
     #_sb_badge {
       position: absolute; top: 0; ${SIDE}: 0;
@@ -597,31 +598,10 @@
     const storeKey = cfg.storeKey || window.StoreBotConfig?.storeKey || "";
     if (storeKey) headers["x-store-key"] = storeKey;
     if (phoneNumber) headers["x-session-id"] = phoneNumber;
-
-    // أرسل معلومات الصفحة الحالية — نجمع كل العناوين المهمة
-    const headings = [];
-    document.querySelectorAll('h1, h2, h3').forEach(el => {
-      const text = el.textContent.trim().slice(0, 200);
-      if (text && !headings.includes(text)) headings.push(text);
-    });
-    // أول 5 عناوين فقط (الأهم)
-    const topHeadings = headings.slice(0, 5).join(' | ');
-
-    // Meta tags
-    const ogTitle = document.querySelector('meta[property="og:title"]')?.content || '';
-    const metaDesc = document.querySelector('meta[name="description"]')?.content || '';
-
-    const pageInfo = {
-      url: window.location.href,
-      title: topHeadings || document.title || "",
-      ogTitle: ogTitle.slice(0, 200),
-      description: metaDesc.slice(0, 200),
-    };
-
     const res = await fetch(`${cfg.backendUrl}/api/chat`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ messages: messages.slice(-12), storeName: cfg.storeName, pageInfo }),
+      body: JSON.stringify({ messages: messages.slice(-12), storeName: cfg.storeName }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
