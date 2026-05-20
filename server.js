@@ -374,7 +374,7 @@ app.post("/api/refresh-feed", async (req, res) => {
 
 app.post("/api/chat", validateStore, async (req, res) => {
   const startTime = Date.now();
-  const { messages, storeName, pageInfo } = req.body;
+  const { messages, storeName } = req.body;
   const store = req.store;
 
   if (!Array.isArray(messages) || !messages.length)
@@ -388,28 +388,7 @@ app.post("/api/chat", validateStore, async (req, res) => {
 
   const lastUserMsg = messages.filter(m => m.role === "user").slice(-1)[0]?.content || "";
   const rawQuery = messages.slice(-5).map(m => m.content).join(" ").slice(0, 400);
-
-  // اكتشاف الإشارات المرجعية مثل "هذا المنتج"، "هذي"، "اللي قدامي"
-  const contextualRefs = /\b(هذا|هذه|هذي|اللي|ذا|دا|this|that|it)\b/i;
-  const isContextual = contextualRefs.test(lastUserMsg);
-
-  // بناء سياق الصفحة كاملاً
-  const pageContext = pageInfo ? [
-    pageInfo.title,
-    pageInfo.ogTitle,
-    pageInfo.description
-  ].filter(Boolean).join(' ').slice(0, 400) : '';
-
   let searchQuery = lastUserMsg;
-
-  // لو ذكر "هذا المنتج" أو إشارة مرجعية → استخدم سياق الصفحة بقوة في البحث
-  if (isContextual && pageContext) {
-    searchQuery = `${pageContext} ${lastUserMsg}`;
-    console.log(`[Context] "${lastUserMsg}" → using page context: "${pageContext.slice(0,100)}..."`);
-  } else if (pageContext) {
-    searchQuery = `${lastUserMsg} ${pageContext}`;
-  }
-
   try {
     const intentRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -421,15 +400,14 @@ app.post("/api/chat", validateStore, async (req, res) => {
 قواعد:
 - حوّل العامية لفصحى: مويه→ماء، جوال→هاتف، مي→ماء
 - حوّل العربي لإنجليزي إذا الاسم أجنبي: روز→rose، بيور→pure
-- إذا كانت الرسالة عامة (مثل "كيف هذا") استخدم اسم المنتج من سياق الصفحة المرفق
 - أجب بكلمات البحث فقط بدون شرح، مثال: "ماء ورد rose water"`,
-        messages: [{ role: "user", content: pageContext ? `الصفحة الحالية (عناوين ووصف):\n${pageContext}\n\nرسالة العميل: ${lastUserMsg}` : lastUserMsg }]
+        messages: [{ role: "user", content: lastUserMsg }]
       }),
     });
     if (intentRes.ok) {
       const intentData = await intentRes.json();
       const intentText = intentData.content?.[0]?.text?.trim() || "";
-      searchQuery = `${searchQuery} ${intentText}`;
+      searchQuery = `${lastUserMsg} ${intentText}`;
       console.log(`[Intent] "${lastUserMsg}" → "${intentText}"`);
     }
   } catch {}
@@ -475,12 +453,7 @@ app.post("/api/chat", validateStore, async (req, res) => {
     }
   } catch {}
 
-  let sysPrompt = buildSystemPrompt(ctx, store, products.length) + faqCtx;
-
-  // إضافة سياق الصفحة الحالية
-  if (pageContext) {
-    sysPrompt += `\n\n## سياق الصفحة الحالية:\n${pageContext}\nرابط الصفحة: ${pageInfo?.url || ''}\nإذا سأل العميل عن "هذا المنتج" أو "هذا" أو "اللي قدامي" — افهم أنه يقصد المنتج الموجود في سياق الصفحة أعلاه، وحاول مطابقة العنوان مع أسماء المنتجات المتاحة.`;
-  }
+  const sysPrompt = buildSystemPrompt(ctx, store, products.length) + faqCtx;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
